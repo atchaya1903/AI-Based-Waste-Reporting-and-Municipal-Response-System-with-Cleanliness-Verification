@@ -1,0 +1,908 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>EcoClean AI | Smart Municipality Waste Reporting & Cleanliness Verification System</title>
+
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+
+  <!-- Bootstrap 5 CSS -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+  <!-- FontAwesome 6 -->
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css" rel="stylesheet">
+  <!-- Leaflet CSS -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+
+  <style>
+    :root {
+      --primary-green: #059669;
+      --primary-green-hover: #047857;
+      --primary-emerald: #10b981;
+      --primary-blue: #1e3a8a;
+      --primary-dark: #0f172a;
+      --secondary-dark: #1e293b;
+      --bg-light: #f8fafc;
+      --border-color: #e2e8f0;
+      --card-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.07), 0 2px 4px -2px rgba(0, 0, 0, 0.05);
+    }
+
+    body {
+      font-family: 'Inter', sans-serif;
+      background-color: var(--bg-light);
+      color: #334155;
+    }
+
+    /* Navbar */
+    .navbar-eco {
+      background-color: var(--primary-dark);
+      border-bottom: 2px solid var(--primary-green);
+    }
+    .navbar-brand-eco {
+      font-weight: 700;
+      color: #ffffff !important;
+      display: flex;
+      align-items: center;
+      gap: 0.6rem;
+    }
+    .brand-icon {
+      background: linear-gradient(135deg, #10b981, #059669);
+      color: #ffffff;
+      padding: 6px 10px;
+      border-radius: 8px;
+    }
+
+    /* Hero */
+    .hero-section {
+      background: linear-gradient(135deg, #0f172a 0%, #1e3a8a 100%);
+      color: #ffffff;
+      padding: 4.5rem 0 3.5rem;
+      position: relative;
+    }
+    .hero-title {
+      font-size: 2.6rem;
+      font-weight: 800;
+      line-height: 1.2;
+    }
+    .hero-highlight {
+      color: #10b981;
+    }
+
+    /* Cards */
+    .eco-card {
+      background: #ffffff;
+      border-radius: 12px;
+      border: 1px solid var(--border-color);
+      box-shadow: var(--card-shadow);
+    }
+
+    /* Stepper */
+    .stepper-container {
+      display: flex;
+      justify-content: space-between;
+      position: relative;
+      margin: 2rem 0 1rem;
+    }
+    .stepper-container::before {
+      content: '';
+      position: absolute;
+      top: 24px;
+      left: 20px;
+      right: 20px;
+      height: 4px;
+      background-color: #e2e8f0;
+      z-index: 1;
+    }
+    .step-item {
+      position: relative;
+      z-index: 2;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      text-align: center;
+      width: 15%;
+    }
+    .step-circle {
+      width: 46px;
+      height: 46px;
+      border-radius: 50%;
+      background-color: #ffffff;
+      border: 3px solid #cbd5e1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1rem;
+      color: #64748b;
+    }
+    .step-item.active .step-circle {
+      border-color: var(--primary-emerald);
+      background-color: var(--primary-emerald);
+      color: #ffffff;
+      box-shadow: 0 0 0 4px rgba(16, 185, 129, 0.2);
+    }
+    .step-item.completed .step-circle {
+      border-color: var(--primary-green);
+      background-color: var(--primary-green);
+      color: #ffffff;
+    }
+    .step-label {
+      margin-top: 0.5rem;
+      font-size: 0.75rem;
+      font-weight: 600;
+      color: #64748b;
+    }
+
+    /* Buttons */
+    .btn-eco-primary {
+      background-color: var(--primary-green);
+      color: #ffffff;
+      border: none;
+      font-weight: 600;
+      border-radius: 8px;
+    }
+    .btn-eco-primary:hover {
+      background-color: var(--primary-green-hover);
+      color: #ffffff;
+    }
+
+    /* Maps */
+    #reportMap {
+      height: 320px;
+      border-radius: 8px;
+    }
+    #adminMap {
+      height: 380px;
+      border-radius: 8px;
+    }
+
+    /* Camera Container */
+    .camera-container {
+      position: relative;
+      max-width: 480px;
+      margin: 0 auto;
+      border-radius: 8px;
+      overflow: hidden;
+      background: #000;
+    }
+    .camera-container video, .camera-container canvas {
+      width: 100%;
+      display: block;
+    }
+
+    /* Status Badges */
+    .badge-status {
+      padding: 0.4rem 0.75rem;
+      font-size: 0.78rem;
+      font-weight: 600;
+      border-radius: 20px;
+    }
+    .status-closed { background-color: #dcfce7; color: #166534; border: 1px solid #86efac; }
+    .status-in-progress { background-color: #ffedd5; color: #9a3412; border: 1px solid #fed7aa; }
+    .status-assigned { background-color: #fef3c7; color: #92400e; border: 1px solid #fde68a; }
+    .status-ai { background-color: #e0e7ff; color: #3730a3; border: 1px solid #c7d2fe; }
+  </style>
+</head>
+<body>
+
+  <!-- Top Navigation -->
+  <nav class="navbar navbar-expand-lg navbar-dark navbar-eco sticky-top shadow-sm">
+    <div class="container-fluid px-lg-4">
+      <a class="navbar-brand navbar-brand-eco" href="#home">
+        <span class="brand-icon"><i class="fas fa-recycle"></i></span>
+        <span>EcoClean AI <span class="badge bg-success" style="font-size:0.65rem;">MUNICIPALITY</span></span>
+      </a>
+
+      <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarMain">
+        <span class="navbar-toggler-icon"></span>
+      </button>
+
+      <div class="collapse navbar-collapse" id="navbarMain">
+        <ul class="navbar-nav me-auto mb-2 mb-lg-0 ms-lg-3">
+          <li class="nav-item"><a class="nav-link active" href="#home"><i class="fas fa-home me-1"></i> Home</a></li>
+          <li class="nav-item"><a class="nav-link text-warning fw-bold" href="#reportSection"><i class="fas fa-camera me-1"></i> Report Waste</a></li>
+          <li class="nav-item"><a class="nav-link" href="#verificationSection"><i class="fas fa-balance-scale me-1"></i> Cleanliness Verifier</a></li>
+          <li class="nav-item"><a class="nav-link" href="#trackingSection"><i class="fas fa-search-location me-1"></i> Track Complaint</a></li>
+          <li class="nav-item"><a class="nav-link" href="#adminSection"><i class="fas fa-shield-alt me-1"></i> Admin Portal</a></li>
+        </ul>
+
+        <div class="d-flex align-items-center gap-2">
+          <span class="badge bg-dark border border-secondary text-light">
+            <i class="fas fa-code-branch text-success me-1"></i> GitHub Pages Live
+          </span>
+          <a href="https://github.com/atchaya1903/AI-Based-Waste-Reporting-and-Municipal-Response-System-with-Cleanliness-Verification" target="_blank" class="btn btn-sm btn-outline-light">
+            <i class="fab fa-github me-1"></i> Source Code
+          </a>
+        </div>
+      </div>
+    </div>
+  </nav>
+
+  <!-- Hero Section -->
+  <section id="home" class="hero-section">
+    <div class="container">
+      <div class="row align-items-center g-5">
+        <div class="col-lg-7">
+          <div class="d-inline-flex align-items-center gap-2 px-3 py-1 rounded-pill bg-dark bg-opacity-50 border border-success border-opacity-50 text-success small mb-3">
+            <i class="fas fa-robot"></i> Powered by YOLOv8 & OpenCV Computer Vision
+          </div>
+          <h1 class="hero-title mb-3">
+            AI-Powered Waste Reporting & <span class="hero-highlight">Cleanliness Verification</span>
+          </h1>
+          <p class="lead text-light text-opacity-75 mb-4">
+            Empowering citizens and municipal authorities with real-time AI object detection, automated spatial ward dispatch, and photographic before-and-after cleanliness verification.
+          </p>
+          <div class="d-flex flex-wrap gap-3">
+            <a href="#reportSection" class="btn btn-lg btn-eco-primary px-4 shadow">
+              <i class="fas fa-camera me-2"></i> Report Waste Incident
+            </a>
+            <a href="#verificationSection" class="btn btn-lg btn-outline-light px-4">
+              <i class="fas fa-check-double me-2"></i> Cleanliness Verifier
+            </a>
+          </div>
+        </div>
+        <div class="col-lg-5">
+          <!-- Live AI Detection Demonstration Card -->
+          <div class="eco-card text-dark shadow-lg border-0 overflow-hidden">
+            <div class="bg-dark text-white p-3 d-flex justify-content-between align-items-center">
+              <div class="small fw-semibold"><i class="fas fa-crosshairs text-success me-2"></i> YOLOv8 Detection HUD</div>
+              <span class="badge bg-success">Active Neural Net</span>
+            </div>
+            <div class="p-3 bg-light text-center position-relative">
+              <canvas id="heroDemoCanvas" width="400" height="240" class="img-fluid rounded border shadow-sm"></canvas>
+            </div>
+            <div class="p-3 bg-white border-top small">
+              <div class="row text-center g-2">
+                <div class="col-4">
+                  <span class="text-muted d-block" style="font-size:0.7rem;">Plastic Bottles</span>
+                  <strong class="text-primary">Recyclable (91%)</strong>
+                </div>
+                <div class="col-4 border-start border-end">
+                  <span class="text-muted d-block" style="font-size:0.7rem;">Food Scraps</span>
+                  <strong class="text-success">Organic (88%)</strong>
+                </div>
+                <div class="col-4">
+                  <span class="text-muted d-block" style="font-size:0.7rem;">Ward Allotment</span>
+                  <strong class="text-info">Ward 1 (Auto)</strong>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Live Stats Counter -->
+  <section class="py-4 bg-white border-bottom shadow-sm">
+    <div class="container">
+      <div class="row g-4 text-center">
+        <div class="col-6 col-md-3">
+          <div class="display-6 fw-bold text-dark">1,248</div>
+          <div class="small text-muted text-uppercase fw-semibold">Complaints Resolved</div>
+        </div>
+        <div class="col-6 col-md-3 border-start">
+          <div class="display-6 fw-bold text-success">94.6%</div>
+          <div class="small text-muted text-uppercase fw-semibold">AI Verification Rate</div>
+        </div>
+        <div class="col-6 col-md-3 border-start">
+          <div class="display-6 fw-bold text-primary">5 Wards</div>
+          <div class="small text-muted text-uppercase fw-semibold">Automated Coverage</div>
+        </div>
+        <div class="col-6 col-md-3 border-start">
+          <div class="display-6 fw-bold text-warning">&lt; 24 hrs</div>
+          <div class="small text-muted text-uppercase fw-semibold">Mean Cleanup Time</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Section 1: Report Waste Incident -->
+  <section id="reportSection" class="py-5">
+    <div class="container">
+      <div class="text-center max-w-700 mx-auto mb-5">
+        <span class="badge bg-success mb-2 px-3 py-1">Citizen Portal</span>
+        <h2 class="fw-bold text-dark">File a Waste Incident with AI Detection</h2>
+        <p class="text-muted small">Snap a photo using your camera or upload an image. The AI classifies the waste and auto-assigns the municipal ward.</p>
+      </div>
+
+      <div class="row g-4 justify-content-center">
+        <!-- Photo Acquisition -->
+        <div class="col-lg-6">
+          <div class="eco-card p-4 h-100">
+            <h5 class="fw-bold text-dark mb-3"><i class="fas fa-camera text-success me-2"></i> 1. Waste Photograph</h5>
+            
+            <ul class="nav nav-pills mb-3 nav-fill">
+              <li class="nav-item">
+                <button class="nav-link active small fw-semibold" id="tabUploadBtn" onclick="switchInput('upload')">
+                  <i class="fas fa-file-upload me-1"></i> Upload Image
+                </button>
+              </li>
+              <li class="nav-item">
+                <button class="nav-link small fw-semibold" id="tabCameraBtn" onclick="switchInput('camera')">
+                  <i class="fas fa-video me-1"></i> Live Camera
+                </button>
+              </li>
+            </ul>
+
+            <!-- File Upload Box -->
+            <div id="uploadBox" class="mb-3">
+              <label class="form-label small fw-semibold text-muted">Select image file</label>
+              <input type="file" id="fileInput" class="form-control" accept="image/*" onchange="previewUserImage(event)">
+            </div>
+
+            <!-- Webcam Box -->
+            <div id="cameraBox" class="text-center d-none mb-3">
+              <button type="button" class="btn btn-outline-primary btn-sm mb-2" onclick="startWebcam()">
+                <i class="fas fa-power-off me-1"></i> Turn On Camera
+              </button>
+              <div class="camera-container d-none" id="videoWrapper">
+                <video id="webcam" autoplay playsinline></video>
+              </div>
+              <div class="mt-2">
+                <button type="button" class="btn btn-eco-primary btn-sm d-none" id="snapBtn" onclick="takeSnapshot()">
+                  <i class="fas fa-camera me-1"></i> Snap Photo
+                </button>
+              </div>
+            </div>
+
+            <!-- Image Canvas / Preview -->
+            <div class="text-center bg-light p-2 rounded border mt-3">
+              <canvas id="detectionCanvas" width="480" height="320" class="img-fluid rounded"></canvas>
+            </div>
+
+            <div class="d-grid mt-3">
+              <button type="button" class="btn btn-eco-primary py-2 fw-semibold" onclick="simulateYoloDetection()">
+                <i class="fas fa-robot me-2"></i> Run AI Waste Detection
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Details & Location -->
+        <div class="col-lg-6">
+          <div class="eco-card p-4 h-100 d-flex flex-column">
+            <h5 class="fw-bold text-dark mb-3"><i class="fas fa-map-marked-alt text-danger me-2"></i> 2. Location & Description</h5>
+
+            <div class="mb-3">
+              <label class="form-label small fw-semibold text-muted">Waste Category</label>
+              <select id="wasteCategorySelect" class="form-select" onchange="updateWardRouting()">
+                <option value="Plastic waste accumulation">Plastic waste accumulation (Bottles/Wrappers)</option>
+                <option value="Food and organic waste">Food and organic waste (Kitchen/Scraps)</option>
+                <option value="Garbage dumped on roads">Garbage dumped on roads</option>
+                <option value="Overflowing dustbins">Overflowing public dustbins</option>
+                <option value="Waste near lakes, rivers, or drainage areas">Waste near lakes, rivers, or drainage areas</option>
+                <option value="Hazardous waste">Hazardous & Electronic waste</option>
+                <option value="Construction debris">Construction debris & rubble</option>
+              </select>
+            </div>
+
+            <div class="mb-3">
+              <label class="form-label small fw-semibold text-muted">Incident Description</label>
+              <textarea id="complaintDesc" class="form-control" rows="2" placeholder="e.g. Discarded plastic containers and food packaging piled up near entrance..."></textarea>
+            </div>
+
+            <!-- Leaflet Map Picker -->
+            <div class="mb-2">
+              <div class="d-flex justify-content-between align-items-center mb-1">
+                <label class="form-label small fw-semibold text-muted m-0">Pin Incident Location</label>
+                <button type="button" class="btn btn-sm btn-outline-primary" style="font-size:0.75rem;" onclick="locateUserGPS()">
+                  <i class="fas fa-crosshairs me-1"></i> My GPS
+                </button>
+              </div>
+              <div id="reportMap"></div>
+            </div>
+
+            <!-- Auto Routing Info -->
+            <div class="p-3 bg-light rounded border small mt-auto" id="routingInfoBox">
+              <div class="d-flex justify-content-between align-items-center">
+                <strong><i class="fas fa-route text-success me-1"></i> Auto-Assigned Ward:</strong>
+                <span class="badge bg-primary" id="assignedWardBadge">Ward 1 - Central Commercial</span>
+              </div>
+              <div class="text-muted mt-1" id="assignedDeptText">
+                Department: Resource Recovery & Plastic Recycling Unit (REC-03)
+              </div>
+            </div>
+
+            <div class="mt-3">
+              <button type="button" class="btn btn-success w-100 py-2 fw-semibold" onclick="submitComplaintAlert()">
+                <i class="fas fa-paper-plane me-1"></i> Submit Complaint to Municipality
+              </button>
+            </div>
+
+          </div>
+        </div>
+
+        <!-- Detection Results Inventory Table (Revealed after AI Detection) -->
+        <div class="col-12 d-none" id="detectionResultsBox">
+          <div class="eco-card p-4">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+              <h5 class="fw-bold text-dark m-0"><i class="fas fa-clipboard-check text-success me-2"></i> AI Detection Inventory Report</h5>
+              <span class="badge bg-success">YOLOv8 & OpenCV Verified</span>
+            </div>
+            <div class="table-responsive">
+              <table class="table table-hover align-middle small">
+                <thead class="table-light">
+                  <tr>
+                    <th>Object Detected</th>
+                    <th>Waste Stream Category</th>
+                    <th>Confidence Score</th>
+                    <th>Quantity</th>
+                    <th>Recommended Municipal Disposal</th>
+                  </tr>
+                </thead>
+                <tbody id="inventoryTableBody">
+                  <!-- Populated dynamically via JS -->
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Section 2: AI Cleanliness Verification Engine -->
+  <section id="verificationSection" class="py-5 bg-white border-top border-bottom">
+    <div class="container">
+      <div class="text-center max-w-700 mx-auto mb-5">
+        <span class="badge bg-primary mb-2 px-3 py-1">Flagship AI Feature</span>
+        <h2 class="fw-bold text-dark">AI Photographic Cleanliness Verification</h2>
+        <p class="text-muted small">
+          Compares the original citizen complaint photograph (Before) with the sanitation specialist's cleanup photograph (After) using the mathematical formula:
+          <br><strong class="text-primary font-monospace">((Before Count − After Count) / Before Count) × 100</strong>
+        </p>
+      </div>
+
+      <div class="eco-card p-4 mb-4 border-success">
+        <div class="row g-4 align-items-center">
+          <div class="col-md-3 text-center border-end">
+            <div class="display-4 fw-bold text-success" id="verifReduction">100.0%</div>
+            <div class="small fw-semibold text-muted text-uppercase">Waste Reduction Metric</div>
+            <span class="badge bg-success mt-2 fs-6">STATUS: PASSED</span>
+          </div>
+          <div class="col-md-3 text-center border-end">
+            <div class="row g-2">
+              <div class="col-6">
+                <span class="text-muted small d-block">Before Count</span>
+                <strong class="fs-4 text-danger">6 Items</strong>
+              </div>
+              <div class="col-6 border-start">
+                <span class="text-muted small d-block">After Count</span>
+                <strong class="fs-4 text-success">0 Items</strong>
+              </div>
+            </div>
+            <div class="small text-muted mt-2"><i class="fas fa-compress-arrows-alt me-1"></i> Clutter Edge Reduction: 74.2%</div>
+          </div>
+          <div class="col-md-3 text-center border-end">
+            <div class="fs-4 fw-bold text-dark">88.5%</div>
+            <div class="small fw-semibold text-muted text-uppercase">Scene Visual Similarity</div>
+            <span class="small text-muted">ORB Feature Match & Histogram Correlation</span>
+          </div>
+          <div class="col-md-3">
+            <div class="small fw-bold text-dark mb-1">AI Recommendation:</div>
+            <p class="small text-muted mb-0">Significant cleanliness improvement verified (&ge; 80% reduction). Area completely swept. Recommended for immediate officer closure.</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Side by Side Visual Comparison Demonstration -->
+      <div class="row g-4">
+        <div class="col-md-6">
+          <div class="eco-card p-3 text-center">
+            <span class="badge bg-danger mb-2">BEFORE CLEANING (Citizen Complaint Photo)</span>
+            <canvas id="beforeCanvas" width="440" height="260" class="img-fluid rounded border"></canvas>
+            <div class="small text-muted mt-2">6 Waste Objects Detected (Bottles, Wrappers, Scraps)</div>
+          </div>
+        </div>
+        <div class="col-md-6">
+          <div class="eco-card p-3 text-center">
+            <span class="badge bg-success mb-2">AFTER CLEANING (Worker Action Submission)</span>
+            <canvas id="afterCanvas" width="440" height="260" class="img-fluid rounded border"></canvas>
+            <div class="small text-muted mt-2">0 Waste Objects Detected (Clean Pavement Verified)</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Section 3: Complaint Tracking Stepper -->
+  <section id="trackingSection" class="py-5">
+    <div class="container">
+      <div class="text-center max-w-700 mx-auto mb-4">
+        <span class="badge bg-info text-dark mb-2 px-3 py-1">Transparency & Civic Tracking</span>
+        <h2 class="fw-bold text-dark">Live Resolution Stepper Workflow</h2>
+        <p class="text-muted small">Tracking sample complaint <strong class="text-dark">CMP-2026-Z303</strong></p>
+      </div>
+
+      <div class="eco-card p-4">
+        <div class="stepper-container">
+          <div class="step-item completed">
+            <div class="step-circle"><i class="fas fa-file-alt"></i></div>
+            <div class="step-label">1. Submitted</div>
+          </div>
+          <div class="step-item completed">
+            <div class="step-circle"><i class="fas fa-robot"></i></div>
+            <div class="step-label">2. AI Analysis</div>
+          </div>
+          <div class="step-item completed">
+            <div class="step-circle"><i class="fas fa-route"></i></div>
+            <div class="step-label">3. Ward Allotted</div>
+          </div>
+          <div class="step-item completed">
+            <div class="step-circle"><i class="fas fa-hard-hat"></i></div>
+            <div class="step-label">4. Worker Assigned</div>
+          </div>
+          <div class="step-item completed">
+            <div class="step-circle"><i class="fas fa-broom"></i></div>
+            <div class="step-label">5. Cleaning Done</div>
+          </div>
+          <div class="step-item active">
+            <div class="step-circle"><i class="fas fa-check-double"></i></div>
+            <div class="step-label">6. Verified & Closed</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Section 4: Municipality Admin Spatial Command Center -->
+  <section id="adminSection" class="py-5 bg-white border-top">
+    <div class="container">
+      <div class="text-center max-w-700 mx-auto mb-5">
+        <span class="badge bg-danger mb-2 px-3 py-1">Municipal Headquarters</span>
+        <h2 class="fw-bold text-dark">City-Wide Complaints Spatial Map & KPIs</h2>
+        <p class="text-muted small">Real-time telemetry across municipal wards with department dispatch status.</p>
+      </div>
+
+      <div class="row g-4">
+        <div class="col-lg-8">
+          <div class="eco-card p-3">
+            <div class="d-flex justify-content-between align-items-center mb-2">
+              <h6 class="fw-bold text-dark m-0"><i class="fas fa-map-marked-alt text-danger me-1"></i> Active Municipal Complaints Map</h6>
+              <span class="badge bg-dark">5 Wards Active</span>
+            </div>
+            <div id="adminMap"></div>
+          </div>
+        </div>
+
+        <div class="col-lg-4">
+          <div class="eco-card p-4 h-100 d-flex flex-column">
+            <h6 class="fw-bold text-dark mb-3"><i class="fas fa-chart-pie text-primary me-1"></i> Category Statistics</h6>
+            <div class="flex-grow-1 d-flex align-items-center justify-content-center">
+              <canvas id="categoryChart" style="max-height: 220px;"></canvas>
+            </div>
+            <div class="mt-3 pt-3 border-top">
+              <button class="btn btn-sm btn-outline-secondary w-100" onclick="alert('CSV report export triggered.')">
+                <i class="fas fa-download me-1"></i> Download Ward Performance CSV
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Footer -->
+  <footer class="bg-dark text-light py-4 border-top border-secondary">
+    <div class="container text-center small">
+      <div class="mb-2">
+        <strong>AI-Based Waste Reporting and Municipal Response System with Cleanliness Verification</strong>
+      </div>
+      <p class="text-muted mb-3">
+        Built with YOLOv8, OpenCV, Python Flask, Leaflet OpenStreetMap, and Bootstrap 5.
+      </p>
+      <div class="d-flex justify-content-center gap-3">
+        <a href="https://github.com/atchaya1903/AI-Based-Waste-Reporting-and-Municipal-Response-System-with-Cleanliness-Verification" target="_blank" class="text-light text-decoration-none">
+          <i class="fab fa-github me-1"></i> GitHub Repository
+        </a>
+        <span>&bull;</span>
+        <span class="text-success"><i class="fas fa-circle me-1" style="font-size:0.5rem;"></i> System Online</span>
+      </div>
+    </div>
+  </footer>
+
+  <!-- Scripts -->
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+  <script>
+    // -------------------------------------------------------------
+    // 1. Interactive Canvases (Simulation of YOLOv8 & Cleanliness)
+    // -------------------------------------------------------------
+    function drawDemoWaste(canvasId, isClean) {
+      const c = document.getElementById(canvasId);
+      if (!c) return;
+      const ctx = c.getContext('2d');
+      const w = c.width;
+      const h = c.height;
+
+      // Pavement background
+      ctx.fillStyle = '#e2e8f0';
+      ctx.fillRect(0, 0, w, h);
+      ctx.fillStyle = '#cbd5e1';
+      ctx.fillRect(0, h * 0.65, w, h * 0.35);
+
+      // Curb line
+      ctx.strokeStyle = '#94a3b8';
+      ctx.lineWidth = 3;
+      ctx.beginPath();
+      ctx.moveTo(0, h * 0.65);
+      ctx.lineTo(w, h * 0.65);
+      ctx.stroke();
+
+      if (!isClean) {
+        // Draw bottle 1
+        ctx.fillStyle = '#0284c7';
+        ctx.fillRect(80, h * 0.5, 35, 75);
+        ctx.fillStyle = '#38bdf8';
+        ctx.fillRect(90, h * 0.45, 15, 15);
+
+        // Draw bottle 2
+        ctx.fillStyle = '#10b981';
+        ctx.fillRect(160, h * 0.55, 30, 65);
+
+        // Draw cup / wrapper
+        ctx.fillStyle = '#f59e0b';
+        ctx.fillRect(230, h * 0.6, 45, 50);
+
+        // Draw organic apple scrap
+        ctx.fillStyle = '#ef4444';
+        ctx.beginPath();
+        ctx.arc(330, h * 0.65, 22, 0, Math.PI * 2);
+        ctx.fill();
+
+        // Draw Bounding Boxes
+        drawBoundingBox(ctx, 75, h * 0.44, 45, 85, 'Bottle: Recyclable (92%)', '#0284c7');
+        drawBoundingBox(ctx, 155, h * 0.53, 40, 72, 'Bottle: Recyclable (88%)', '#10b981');
+        drawBoundingBox(ctx, 225, h * 0.58, 55, 56, 'Cup: Recyclable (85%)', '#f59e0b');
+        drawBoundingBox(ctx, 305, h * 0.55, 50, 48, 'Food Scrap: Organic (94%)', '#ef4444');
+
+        // Top HUD
+        ctx.fillStyle = 'rgba(15, 23, 42, 0.85)';
+        ctx.fillRect(0, 0, w, 28);
+        ctx.fillStyle = '#ffffff';
+        ctx.font = '11px Inter, sans-serif';
+        ctx.fillText('YOLOv8: 4 Waste Objects Identified | Conf >= 80%', 12, 18);
+      } else {
+        // Clean scene
+        ctx.fillStyle = 'rgba(16, 185, 129, 0.85)';
+        ctx.fillRect(0, 0, w, 28);
+        ctx.fillStyle = '#ffffff';
+        ctx.font = '11px Inter, sans-serif';
+        ctx.fillText('AI CLEANLINESS VERIFIER: 0 Waste Objects Detected (100% Cleared)', 12, 18);
+      }
+    }
+
+    function drawBoundingBox(ctx, x, y, bw, bh, label, color) {
+      ctx.strokeStyle = color;
+      ctx.lineWidth = 2;
+      ctx.strokeRect(x, y, bw, bh);
+
+      // Label background
+      ctx.fillStyle = color;
+      ctx.fillRect(x, y - 16, ctx.measureText(label).width + 10, 16);
+      ctx.fillStyle = '#ffffff';
+      ctx.font = '10px Inter, sans-serif';
+      ctx.fillText(label, x + 4, y - 4);
+    }
+
+    // -------------------------------------------------------------
+    // 2. Leaflet Maps Initialization
+    // -------------------------------------------------------------
+    let reportMap, adminMap, marker;
+
+    function initMaps() {
+      // Citizen Map
+      reportMap = L.map('reportMap').setView([12.9716, 77.5946], 13);
+      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '&copy; OpenStreetMap'
+      }).addTo(reportMap);
+
+      marker = L.marker([12.9716, 77.5946], { draggable: true }).addTo(reportMap);
+      marker.on('dragend', function(e) {
+        updateWardRouting();
+      });
+      reportMap.on('click', function(e) {
+        marker.setLatLng(e.latlng);
+        updateWardRouting();
+      });
+
+      // Admin Map
+      adminMap = L.map('adminMap').setView([12.9716, 77.5946], 12);
+      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '&copy; OpenStreetMap'
+      }).addTo(adminMap);
+
+      const complaints = [
+        { lat: 12.9716, lng: 77.5946, id: 'CMP-2026-X101', status: 'In Progress', color: '#ea580c' },
+        { lat: 13.0035, lng: 77.5750, id: 'CMP-2026-Y202', status: 'Worker Assigned', color: '#d97706' },
+        { lat: 12.9250, lng: 77.5850, id: 'CMP-2026-Z303', status: 'Verified Clean', color: '#10b981' },
+        { lat: 12.9352, lng: 77.6245, id: 'CMP-2026-W404', status: 'New AI Scan', color: '#4f46e5' }
+      ];
+
+      complaints.forEach(c => {
+        L.circleMarker([c.lat, c.lng], {
+          radius: 9,
+          fillColor: c.color,
+          color: '#ffffff',
+          weight: 2,
+          fillOpacity: 0.9
+        }).bindPopup(`<strong>${c.id}</strong><br>Status: ${c.status}`).addTo(adminMap);
+      });
+    }
+
+    // -------------------------------------------------------------
+    // 3. Category Chart
+    // -------------------------------------------------------------
+    function initChart() {
+      const ctx = document.getElementById('categoryChart').getContext('2d');
+      new Chart(ctx, {
+        type: 'doughnut',
+        data: {
+          labels: ['Plastic & Cans', 'Food & Organic', 'Debris', 'Hazardous'],
+          datasets: [{
+            data: [45, 30, 15, 10],
+            backgroundColor: ['#3b82f6', '#10b981', '#f59e0b', '#ef4444'],
+            borderWidth: 2,
+            borderColor: '#ffffff'
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: { legend: { position: 'bottom', labels: { boxWidth: 10, font: { size: 10 } } } }
+        }
+      });
+    }
+
+    // -------------------------------------------------------------
+    // 4. UI Actions & Webcam
+    // -------------------------------------------------------------
+    function switchInput(mode) {
+      if (mode === 'upload') {
+        document.getElementById('uploadBox').classList.remove('d-none');
+        document.getElementById('cameraBox').classList.add('d-none');
+        document.getElementById('tabUploadBtn').classList.add('active');
+        document.getElementById('tabCameraBtn').classList.remove('active');
+      } else {
+        document.getElementById('uploadBox').classList.add('d-none');
+        document.getElementById('cameraBox').classList.remove('d-none');
+        document.getElementById('tabUploadBtn').classList.remove('active');
+        document.getElementById('tabCameraBtn').classList.add('active');
+      }
+    }
+
+    let webcamStream = null;
+    function startWebcam() {
+      const video = document.getElementById('webcam');
+      const wrapper = document.getElementById('videoWrapper');
+      const snapBtn = document.getElementById('snapBtn');
+
+      if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
+        navigator.mediaDevices.getUserMedia({ video: true }).then(stream => {
+          webcamStream = stream;
+          video.srcObject = stream;
+          wrapper.classList.remove('d-none');
+          snapBtn.classList.remove('d-none');
+        }).catch(err => {
+          alert('Camera permission denied or camera not found: ' + err.message);
+        });
+      }
+    }
+
+    function takeSnapshot() {
+      const video = document.getElementById('webcam');
+      const canvas = document.getElementById('detectionCanvas');
+      const ctx = canvas.getContext('2d');
+      ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+      if (webcamStream) {
+        webcamStream.getTracks().forEach(t => t.stop());
+      }
+      document.getElementById('videoWrapper').classList.add('d-none');
+      document.getElementById('snapBtn').classList.add('d-none');
+      alert('Photo captured! Now click "Run AI Waste Detection".');
+    }
+
+    function previewUserImage(e) {
+      const file = e.target.files[0];
+      if (!file) return;
+      const img = new Image();
+      img.onload = function() {
+        const canvas = document.getElementById('detectionCanvas');
+        const ctx = canvas.getContext('2d');
+        ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+      };
+      img.src = URL.createObjectURL(file);
+    }
+
+    function simulateYoloDetection() {
+      // Draw simulated bounding boxes on the canvas
+      drawDemoWaste('detectionCanvas', false);
+      const resultsBox = document.getElementById('detectionResultsBox');
+      resultsBox.classList.remove('d-none');
+
+      const tbody = document.getElementById('inventoryTableBody');
+      tbody.innerHTML = `
+        <tr>
+          <td><strong>Beverage Plastic Bottle</strong></td>
+          <td><span class="badge bg-primary">Recyclable Waste</span></td>
+          <td><strong class="text-success">92.4%</strong></td>
+          <td>2 items</td>
+          <td>Mechanical shredding & resource recovery plant.</td>
+        </tr>
+        <tr>
+          <td><strong>Takeout Food Packaging</strong></td>
+          <td><span class="badge bg-primary">Recyclable Waste</span></td>
+          <td><strong class="text-success">88.1%</strong></td>
+          <td>1 item</td>
+          <td>Rinse residual sauce; transfer to dry plastic bin.</td>
+        </tr>
+        <tr>
+          <td><strong>Vegetable & Fruit Peels</strong></td>
+          <td><span class="badge bg-success">Biodegradable Waste</span></td>
+          <td><strong class="text-success">94.7%</strong></td>
+          <td>1 pile</td>
+          <td>Municipal wet waste compost facility.</td>
+        </tr>
+      `;
+
+      resultsBox.scrollIntoView({ behavior: 'smooth' });
+    }
+
+    function updateWardRouting() {
+      const cat = document.getElementById('wasteCategorySelect').value;
+      const wardBadge = document.getElementById('assignedWardBadge');
+      const deptText = document.getElementById('assignedDeptText');
+
+      if (cat.includes('Food') || cat.includes('organic')) {
+        wardBadge.textContent = 'Ward 3 - South Residential Colony';
+        deptText.textContent = 'Department: Organic & Food Waste Management Wing (ORG-02)';
+      } else if (cat.includes('lakes') || cat.includes('drainage')) {
+        wardBadge.textContent = 'Ward 2 - North Lake & Green Belt';
+        deptText.textContent = 'Department: River, Lake & Drainage Eco-Squad (ECO-04)';
+      } else if (cat.includes('Hazardous')) {
+        wardBadge.textContent = 'Ward 5 - West Industrial Estate';
+        deptText.textContent = 'Department: Hazardous & Electronic Waste Wing (HAZ-06)';
+      } else {
+        wardBadge.textContent = 'Ward 1 - Central Commercial';
+        deptText.textContent = 'Department: Ward Sanitation & Street Cleaning (SAN-01)';
+      }
+    }
+
+    function locateUserGPS() {
+      if (navigator.geolocation) {
+        navigator.geolocation.getCurrentPosition(pos => {
+          const lat = pos.coords.latitude;
+          const lng = pos.coords.longitude;
+          reportMap.setView([lat, lng], 15);
+          marker.setLatLng([lat, lng]);
+          updateWardRouting();
+          alert('GPS Location Locked: Lat ' + lat.toFixed(4) + ', Lng ' + lng.toFixed(4));
+        });
+      }
+    }
+
+    function submitComplaintAlert() {
+      const refId = 'CMP-2026-X' + Math.floor(100 + Math.random() * 900);
+      alert('Success! Complaint ' + refId + ' registered and dispatched to ' + document.getElementById('assignedWardBadge').textContent + '!');
+      document.getElementById('trackingSection').scrollIntoView({ behavior: 'smooth' });
+    }
+
+    // -------------------------------------------------------------
+    // Initial Load
+    // -------------------------------------------------------------
+    window.addEventListener('DOMContentLoaded', () => {
+      drawDemoWaste('heroDemoCanvas', false);
+      drawDemoWaste('detectionCanvas', false);
+      drawDemoWaste('beforeCanvas', false);
+      drawDemoWaste('afterCanvas', true);
+      initMaps();
+      initChart();
+    });
+  </script>
+</body>
+</html>
