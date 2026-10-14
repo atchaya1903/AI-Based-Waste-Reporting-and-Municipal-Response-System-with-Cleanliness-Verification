@@ -1,0 +1,242 @@
+{% extends 'base.html' %}
+
+{% block title %}EcoClean AI | Smart Municipality Waste Reporting & Cleanliness Verification{% endblock %}
+
+{% block content %}
+<!-- Hero Section -->
+<section class="hero-section">
+  <div class="container position-relative" style="z-index: 2;">
+    <div class="row align-items-center g-5">
+      <div class="col-lg-7">
+        <div class="d-inline-flex align-items-center gap-2 px-3 py-1 rounded-pill bg-dark bg-opacity-50 border border-success border-opacity-50 text-success small mb-3">
+          <i class="fas fa-robot"></i> Powered by YOLOv8 & OpenCV Computer Vision
+        </div>
+        <h1 class="hero-title mb-3">
+          AI-Powered Waste Reporting & <span class="hero-highlight">Cleanliness Verification</span>
+        </h1>
+        <p class="lead text-light text-opacity-75 mb-4">
+          Empowering citizens and municipal sanitation teams with real-time AI object detection, automated ward routing, and photographic verification of public cleanliness.
+        </p>
+        <div class="d-flex flex-wrap gap-3">
+          <a href="{{ url_for('report_waste') }}" class="btn btn-lg btn-eco-primary shadow">
+            <i class="fas fa-camera me-2"></i> Report Waste Incident
+          </a>
+          <a href="{{ url_for('track_complaint') }}" class="btn btn-lg btn-outline-light">
+            <i class="fas fa-search me-2"></i> Track Complaint
+          </a>
+        </div>
+      </div>
+      <div class="col-lg-5">
+        <!-- AI Detection Visual Card Preview -->
+        <div class="eco-card text-dark shadow-lg border-0 overflow-hidden">
+          <div class="bg-dark text-white p-3 d-flex justify-content-between align-items-center border-bottom border-secondary">
+            <div class="small fw-semibold"><i class="fas fa-crosshairs text-success me-2"></i> AI Waste Recognition HUD</div>
+            <span class="badge bg-success">YOLOv8 Active</span>
+          </div>
+          <div class="p-3 bg-light text-center position-relative">
+            <img src="{{ url_for('static', filename='sample_images/sample_street_waste.jpg') }}" alt="AI Detection Preview" class="img-fluid rounded border shadow-sm">
+            <div class="position-absolute bottom-0 start-50 translate-middle-x mb-4 px-3 py-1 bg-dark bg-opacity-75 text-white rounded-pill small">
+              <i class="fas fa-check-circle text-success me-1"></i> Multi-class Waste Segregation
+            </div>
+          </div>
+          <div class="p-3 bg-white border-top small">
+            <div class="row text-center g-2">
+              <div class="col-4">
+                <span class="text-muted d-block" style="font-size:0.75rem;">Plastic/Recyclable</span>
+                <strong class="text-primary">Detected</strong>
+              </div>
+              <div class="col-4 border-start border-end">
+                <span class="text-muted d-block" style="font-size:0.75rem;">Food/Organic</span>
+                <strong class="text-success">Classified</strong>
+              </div>
+              <div class="col-4">
+                <span class="text-muted d-block" style="font-size:0.75rem;">Ward Routing</span>
+                <strong class="text-info">Automated</strong>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Live Metrics Counter -->
+<section class="py-4 bg-white border-bottom shadow-sm">
+  <div class="container">
+    <div class="row g-4 text-center">
+      <div class="col-6 col-md-3">
+        <div class="p-2">
+          <div class="display-6 fw-bold text-dark">{{ stats.total }}</div>
+          <div class="small text-muted text-uppercase fw-semibold">Complaints Registered</div>
+        </div>
+      </div>
+      <div class="col-6 col-md-3 border-start">
+        <div class="p-2">
+          <div class="display-6 fw-bold text-success">{{ stats.completed }}</div>
+          <div class="small text-muted text-uppercase fw-semibold">Cleanups Completed</div>
+        </div>
+      </div>
+      <div class="col-6 col-md-3 border-start">
+        <div class="p-2">
+          <div class="display-6 fw-bold text-primary">{{ stats.rate }}%</div>
+          <div class="small text-muted text-uppercase fw-semibold">Cleanliness Verification Rate</div>
+        </div>
+      </div>
+      <div class="col-6 col-md-3 border-start">
+        <div class="p-2">
+          <div class="display-6 fw-bold text-warning">{{ stats.workers }}</div>
+          <div class="small text-muted text-uppercase fw-semibold">Active Field Workers</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Core Features -->
+<section class="py-5">
+  <div class="container">
+    <div class="text-center max-w-700 mx-auto mb-5">
+      <h6 class="text-emerald text-uppercase fw-bold">Smart City Ecosystem</h6>
+      <h2 class="fw-bold text-dark">Intelligent Waste Management Architecture</h2>
+      <p class="text-muted">Combining cutting-edge computer vision with automated municipal dispatch to maintain pristine public spaces.</p>
+    </div>
+
+    <div class="row g-4">
+      <div class="col-md-6 col-lg-3">
+        <div class="eco-card p-4 h-100">
+          <div class="metric-icon-box icon-box-emerald mb-3">
+            <i class="fas fa-camera-retro"></i>
+          </div>
+          <h5 class="fw-bold text-dark">YOLOv8 Detection</h5>
+          <p class="text-muted small">
+            Instantly analyzes uploaded images or live camera frames using trained YOLOv8 neural networks to locate, bound, and classify waste items.
+          </p>
+        </div>
+      </div>
+
+      <div class="col-md-6 col-lg-3">
+        <div class="eco-card p-4 h-100">
+          <div class="metric-icon-box icon-box-blue mb-3">
+            <i class="fas fa-map-marked-alt"></i>
+          </div>
+          <h5 class="fw-bold text-dark">Auto-Ward Routing</h5>
+          <p class="text-muted small">
+            Identifies the municipal ward and dispatches tasks to the responsible department (Sanitation, Recycling, Eco-Squad) using GPS geofencing.
+          </p>
+        </div>
+      </div>
+
+      <div class="col-md-6 col-lg-3">
+        <div class="eco-card p-4 h-100">
+          <div class="metric-icon-box icon-box-purple mb-3">
+            <i class="fas fa-balance-scale"></i>
+          </div>
+          <h5 class="fw-bold text-dark">Cleanliness Verification</h5>
+          <p class="text-muted small">
+            Computes waste reduction percentage: <br>
+            <code class="small text-primary">((Before − After) / Before) × 100</code> with OpenCV structural clutter analysis.
+          </p>
+        </div>
+      </div>
+
+      <div class="col-md-6 col-lg-3">
+        <div class="eco-card p-4 h-100">
+          <div class="metric-icon-box icon-box-amber mb-3">
+            <i class="fas fa-user-check"></i>
+          </div>
+          <h5 class="fw-bold text-dark">Officer Governance</h5>
+          <p class="text-muted small">
+            Requires municipal officer review before final closure when confidence is borderline, ensuring full civic accountability.
+          </p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- System Workflow Stepper -->
+<section class="py-5 bg-white border-top border-bottom">
+  <div class="container">
+    <div class="text-center mb-5">
+      <h6 class="text-emerald text-uppercase fw-bold">Step-by-Step Resolution</h6>
+      <h2 class="fw-bold text-dark">Complete Lifecycle of a Waste Complaint</h2>
+    </div>
+
+    <div class="row g-4 text-center">
+      <div class="col-md-2">
+        <div class="p-3 border rounded-3 bg-light h-100">
+          <div class="badge bg-primary mb-2">Step 1</div>
+          <h6 class="fw-bold text-dark">Citizen Report</h6>
+          <p class="small text-muted mb-0">Citizen snaps garbage photo with camera and drops location pin.</p>
+        </div>
+      </div>
+      <div class="col-md-2">
+        <div class="p-3 border rounded-3 bg-light h-100">
+          <div class="badge bg-indigo mb-2" style="background-color:#4f46e5;">Step 2</div>
+          <h6 class="fw-bold text-dark">AI Detection</h6>
+          <p class="small text-muted mb-0">YOLOv8 & OpenCV count objects and classify waste category.</p>
+        </div>
+      </div>
+      <div class="col-md-2">
+        <div class="p-3 border rounded-3 bg-light h-100">
+          <div class="badge bg-warning text-dark mb-2">Step 3</div>
+          <h6 class="fw-bold text-dark">Ward Allotment</h6>
+          <p class="small text-muted mb-0">Automatic dispatch to responsible ward & sanitation department.</p>
+        </div>
+      </div>
+      <div class="col-md-2">
+        <div class="p-3 border rounded-3 bg-light h-100">
+          <div class="badge bg-danger mb-2">Step 4</div>
+          <h6 class="fw-bold text-dark">Field Cleanup</h6>
+          <p class="small text-muted mb-0">Worker navigates to site, initiates cleanup, and sweeps area.</p>
+        </div>
+      </div>
+      <div class="col-md-2">
+        <div class="p-3 border rounded-3 bg-light h-100">
+          <div class="badge bg-info text-dark mb-2">Step 5</div>
+          <h6 class="fw-bold text-dark">After Photo</h6>
+          <p class="small text-muted mb-0">Worker uploads after-cleaning photo to trigger AI verification.</p>
+        </div>
+      </div>
+      <div class="col-md-2">
+        <div class="p-3 border rounded-3 bg-light h-100">
+          <div class="badge bg-success mb-2">Step 6</div>
+          <h6 class="fw-bold text-dark">Verified & Closed</h6>
+          <p class="small text-muted mb-0">AI verifies &ge; 80% waste reduction; officer confirms closure.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Demo Quick-Access Box -->
+<section class="py-5 bg-light">
+  <div class="container">
+    <div class="eco-card p-4 p-md-5 border-success">
+      <div class="row align-items-center g-4">
+        <div class="col-lg-7">
+          <span class="badge bg-success mb-2">Fast Evaluation Mode</span>
+          <h3 class="fw-bold text-dark mb-2">Explore the System with Pre-configured Roles</h3>
+          <p class="text-muted mb-0">
+            Click any role below to test the full system instantly with pre-seeded sample data, verified cleanup reports, and role-based dashboards.
+          </p>
+        </div>
+        <div class="col-lg-5">
+          <div class="d-grid gap-2">
+            <a href="{{ url_for('demo_login', role='citizen') }}" class="btn btn-outline-success text-start py-2 px-3 fw-semibold">
+              <i class="fas fa-user me-2"></i> Log in as Citizen <span class="badge bg-light text-dark float-end">Report & Track</span>
+            </a>
+            <a href="{{ url_for('demo_login', role='worker') }}" class="btn btn-outline-warning text-dark text-start py-2 px-3 fw-semibold">
+              <i class="fas fa-hard-hat me-2"></i> Log in as Sanitation Worker <span class="badge bg-light text-dark float-end">Field Tasks</span>
+            </a>
+            <a href="{{ url_for('demo_login', role='admin') }}" class="btn btn-outline-primary text-start py-2 px-3 fw-semibold">
+              <i class="fas fa-shield-alt me-2"></i> Log in as Municipal Officer <span class="badge bg-light text-dark float-end">Admin & Maps</span>
+            </a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+{% endblock %}

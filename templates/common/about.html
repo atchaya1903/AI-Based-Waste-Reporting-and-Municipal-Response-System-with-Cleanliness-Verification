@@ -1,0 +1,152 @@
+{% extends 'base.html' %}
+
+{% block title %}About System & Architecture | Smart Clean Municipality{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+  <div class="text-center max-w-700 mx-auto mb-5">
+    <span class="badge bg-success mb-2 px-3 py-1">Smart Civic Infrastructure</span>
+    <h1 class="fw-bold text-dark">AI-Based Waste Reporting & Cleanliness Verification System</h1>
+    <p class="text-muted">A comprehensive technical overview of the computer vision pipeline, automated spatial dispatch algorithms, and photographic verification engine.</p>
+  </div>
+
+  <div class="row g-4 mb-5">
+    <!-- Card 1: AI & YOLOv8 Detection -->
+    <div class="col-md-4">
+      <div class="eco-card p-4 h-100">
+        <div class="metric-icon-box icon-box-emerald mb-3">
+          <i class="fas fa-brain"></i>
+        </div>
+        <h4 class="fw-bold text-dark">YOLOv8 & OpenCV</h4>
+        <p class="text-muted small">
+          The system integrates real YOLOv8 nano convolutional weights for rapid object localization. Images are preprocessed using OpenCV (resizing, color space transformations, Laplacian variance sharpness auditing) before running bounding-box inference.
+        </p>
+        <ul class="small text-muted ps-3 mb-0">
+          <li>Multi-class recognition (plastic, organic, hazardous, debris).</li>
+          <li>Real-time HUD statistics & confidence scoring.</li>
+          <li>Modular architecture supporting custom waste weights.</li>
+        </ul>
+      </div>
+    </div>
+
+    <!-- Card 2: Spatial Ward Routing -->
+    <div class="col-md-4">
+      <div class="eco-card p-4 h-100">
+        <div class="metric-icon-box icon-box-blue mb-3">
+          <i class="fas fa-route"></i>
+        </div>
+        <h4 class="fw-bold text-dark">Smart Ward Allotment</h4>
+        <p class="text-muted small">
+          Uses Haversine spherical distance and geofenced municipal zones to assign citizen complaints to the nearest municipal ward. Incident categories are deterministically routed to the responsible department.
+        </p>
+        <ul class="small text-muted ps-3 mb-0">
+          <li>Food & wet waste &rarr; Organic Composting Wing</li>
+          <li>Plastic accumulation &rarr; Resource Recovery Unit</li>
+          <li>Canal/Drainage waste &rarr; Eco-Squad Water Division</li>
+        </ul>
+      </div>
+    </div>
+
+    <!-- Card 3: Photographic Cleanliness Verification -->
+    <div class="col-md-4">
+      <div class="eco-card p-4 h-100">
+        <div class="metric-icon-box icon-box-purple mb-3">
+          <i class="fas fa-balance-scale"></i>
+        </div>
+        <h4 class="fw-bold text-dark">Cleanliness Verification</h4>
+        <p class="text-muted small">
+          The flagship innovation of the project compares the original citizen photo against the worker's after-cleaning photograph using the verified mathematical reduction formula:
+        </p>
+        <div class="p-2 bg-light rounded text-center small font-monospace text-primary mb-2">
+          ((Before − After) / Before) × 100
+        </div>
+        <p class="small text-muted mb-0">
+          Combined with OpenCV ORB feature matching and Canny clutter edge density reduction to verify site authenticity.
+        </p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Verification Policy Matrix -->
+  <div class="eco-card p-4 mb-5">
+    <h4 class="fw-bold text-dark mb-3"><i class="fas fa-shield-alt text-primary me-2"></i> Cleanliness Verification Decision Matrix</h4>
+    <div class="table-responsive">
+      <table class="eco-table">
+        <thead>
+          <tr>
+            <th>Verification Status</th>
+            <th>Waste Reduction %</th>
+            <th>OpenCV Clutter & Similarity</th>
+            <th>Recommended Action</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><span class="badge bg-success fs-6">Passed</span></td>
+            <td><strong>&ge; 80.0%</strong> reduction</td>
+            <td>Low edge density & high scene correlation</td>
+            <td>Immediate officer approval for complaint closure.</td>
+          </tr>
+          <tr>
+            <td><span class="badge bg-warning text-dark fs-6">Needs Review</span></td>
+            <td><strong>50.0% &ndash; 79.9%</strong> reduction</td>
+            <td>Borderline debris or minor angle deviation</td>
+            <td>Mandatory officer inspection of composite images before closure.</td>
+          </tr>
+          <tr>
+            <td><span class="badge bg-danger fs-6">Failed</span></td>
+            <td><strong>&lt; 50.0%</strong> or waste increased</td>
+            <td>High persistent edge density</td>
+            <td>Automatic rejection; complaint returned to field worker for rework.</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- Frequently Asked Questions -->
+  <div class="eco-card p-4">
+    <h4 class="fw-bold text-dark mb-4"><i class="fas fa-question-circle text-success me-2"></i> Frequently Asked Questions</h4>
+    <div class="accordion" id="faqAccordion">
+      <div class="accordion-item">
+        <h2 class="accordion-header">
+          <button class="accordion-button fw-semibold" type="button" data-bs-toggle="collapse" data-bs-target="#faq1">
+            How does the system ensure after-cleaning photos aren't faked?
+          </button>
+        </h2>
+        <div id="faq1" class="accordion-collapse collapse show" data-bs-parent="#faqAccordion">
+          <div class="accordion-body small text-muted">
+            The verification engine runs OpenCV ORB (Oriented FAST and Rotated BRIEF) keypoint extraction and color histogram correlation between the Before and After images. If the scene background, lighting, or pavement features do not match, the system flags a visual disparity warning and requires supervisory approval.
+          </div>
+        </div>
+      </div>
+
+      <div class="accordion-item">
+        <h2 class="accordion-header">
+          <button class="accordion-button collapsed fw-semibold" type="button" data-bs-toggle="collapse" data-bs-target="#faq2">
+            Can the system use custom-trained waste datasets?
+          </button>
+        </h2>
+        <div id="faq2" class="accordion-collapse collapse" data-bs-parent="#faqAccordion">
+          <div class="accordion-body small text-muted">
+            Yes. The detector in <code>ai_detector.py</code> is completely modular. You can drop custom-trained YOLO weights (e.g., trained on TACO, TrashNet, or municipal waste datasets) into the <code>models/</code> directory and update <code>Config.YOLO_MODEL_PATH</code>.
+          </div>
+        </div>
+      </div>
+
+      <div class="accordion-item">
+        <h2 class="accordion-header">
+          <button class="accordion-button collapsed fw-semibold" type="button" data-bs-toggle="collapse" data-bs-target="#faq3">
+            How can administrators export municipal reports?
+          </button>
+        </h2>
+        <div id="faq3" class="accordion-collapse collapse" data-bs-parent="#faqAccordion">
+          <div class="accordion-body small text-muted">
+            Authorized municipal officers can download complete CSV reports containing complaint IDs, categories, ward assignments, citizen details, resolution timestamps, and verification metrics directly from the Admin Dashboard or Analytics portal.
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

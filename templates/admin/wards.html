@@ -1,0 +1,152 @@
+{% extends 'base.html' %}
+
+{% block title %}Municipal Wards & Departments | Smart Clean Municipality{% endblock %}
+
+{% block content %}
+<div class="container-fluid px-4 py-4">
+  <div class="d-flex flex-wrap justify-content-between align-items-center mb-4">
+    <div>
+      <h2 class="fw-bold text-dark m-0">Municipal Wards & Sanitation Routing</h2>
+      <p class="text-muted small m-0">Configure ward geofence centers, administrative boundaries, and automated department dispatch rules.</p>
+    </div>
+    <div class="d-flex gap-2">
+      <button class="btn btn-eco-primary btn-sm" data-bs-toggle="modal" data-bs-target="#addWardModal">
+        <i class="fas fa-plus me-1"></i> Add New Ward
+      </button>
+      <a href="{{ url_for('admin_dashboard') }}" class="btn btn-outline-secondary btn-sm">
+        <i class="fas fa-arrow-left me-1"></i> Admin Dashboard
+      </a>
+    </div>
+  </div>
+
+  <div class="row g-4">
+    <!-- Wards List -->
+    <div class="col-lg-8">
+      <div class="eco-card">
+        <div class="eco-card-header">
+          <h5 class="fw-bold text-dark m-0"><i class="fas fa-map-marked text-primary me-2"></i> Municipal Wards ({{ wards|length }})</h5>
+        </div>
+        <div class="eco-card-body p-0">
+          <div class="table-responsive">
+            <table class="eco-table">
+              <thead>
+                <tr>
+                  <th>Ward Name & Code</th>
+                  <th>Center Coordinates</th>
+                  <th>Primary Department</th>
+                  <th>Boundary Key Areas</th>
+                  <th>Total Complaints</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for w in wards %}
+                  <tr>
+                    <td>
+                      <strong class="text-dark d-block">{{ w.ward_name }}</strong>
+                      <span class="badge bg-light text-dark border">{{ w.ward_code }}</span>
+                    </td>
+                    <td>
+                      <span class="small font-monospace text-muted">{{ w.lat_center }}, {{ w.lng_center }}</span>
+                    </td>
+                    <td>
+                      <span class="small fw-semibold text-success">{{ w.dept_name or 'Sanitation' }}</span>
+                      <div class="text-muted" style="font-size:0.75rem;">{{ w.dept_code }}</div>
+                    </td>
+                    <td class="small text-muted">{{ w.boundary_information }}</td>
+                    <td>
+                      <span class="badge bg-primary rounded-pill px-3 py-1">{{ w.complaint_count }}</span>
+                    </td>
+                  </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Departments Directory -->
+    <div class="col-lg-4">
+      <div class="eco-card">
+        <div class="eco-card-header">
+          <h5 class="fw-bold text-dark m-0"><i class="fas fa-building text-success me-2"></i> Sanitation Divisions</h5>
+        </div>
+        <div class="eco-card-body p-3">
+          <ul class="list-group list-group-flush small">
+            {% for d in departments %}
+              <li class="list-group-item px-0 py-2">
+                <div class="d-flex justify-content-between align-items-center">
+                  <strong class="text-dark">{{ d.name }}</strong>
+                  <span class="badge bg-secondary">{{ d.code }}</span>
+                </div>
+                <div class="text-muted" style="font-size: 0.75rem;">
+                  <i class="fas fa-envelope me-1"></i> {{ d.email }} | <i class="fas fa-phone me-1"></i> {{ d.phone }}
+                </div>
+              </li>
+            {% endfor %}
+          </ul>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Modal: Add Ward -->
+<div class="modal fade" id="addWardModal" tabindex="-1">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <form method="POST" action="{{ url_for('admin_add_ward') }}">
+        <div class="modal-header">
+          <h5 class="modal-title fw-bold">Configure New Municipal Ward</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body">
+          <div class="mb-3">
+            <label class="form-label small fw-semibold">Ward Name</label>
+            <input type="text" name="ward_name" class="form-control" placeholder="Ward 6 - Outer Ring Tech Corridor" required>
+          </div>
+
+          <div class="mb-3">
+            <label class="form-label small fw-semibold">Ward Code</label>
+            <input type="text" name="ward_code" class="form-control" placeholder="WARD-06" required>
+          </div>
+
+          <div class="row g-2 mb-3">
+            <div class="col-6">
+              <label class="form-label small fw-semibold">Center Latitude</label>
+              <input type="number" step="any" name="lat_center" class="form-control" placeholder="12.9350" required>
+            </div>
+            <div class="col-6">
+              <label class="form-label small fw-semibold">Center Longitude</label>
+              <input type="number" step="any" name="lng_center" class="form-control" placeholder="77.6250" required>
+            </div>
+          </div>
+
+          <div class="mb-3">
+            <label class="form-label small fw-semibold">Primary Department</label>
+            <select name="department_id" class="form-select" required>
+              {% for d in departments %}
+                <option value="{{ d.department_id }}">{{ d.name }} ({{ d.code }})</option>
+              {% endfor %}
+            </select>
+          </div>
+
+          <div class="mb-3">
+            <label class="form-label small fw-semibold">Key Areas & Landmarks</label>
+            <textarea name="boundary_information" class="form-control" rows="2" placeholder="List key avenues, markets, or landmarks included..."></textarea>
+          </div>
+
+          <div class="mb-3">
+            <label class="form-label small fw-semibold">Ward Description</label>
+            <textarea name="description" class="form-control" rows="2" placeholder="Demographic or waste generation characteristics..."></textarea>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Cancel</button>
+          <button type="submit" class="btn btn-eco-primary btn-sm">Save Municipal Ward</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+{% endblock %}

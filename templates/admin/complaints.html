@@ -1,0 +1,254 @@
+{% extends 'base.html' %}
+
+{% block title %}Manage Complaints | Smart Clean Municipality{% endblock %}
+
+{% block content %}
+<div class="container-fluid px-4 py-4">
+  <div class="d-flex flex-wrap justify-content-between align-items-center mb-4">
+    <div>
+      <h2 class="fw-bold text-dark m-0">Municipal Complaint Triage & Dispatch</h2>
+      <p class="text-muted small m-0">Assign sanitation specialists, inspect AI detection results, and update complaint workflows.</p>
+    </div>
+    <div class="d-flex gap-2">
+      <a href="{{ url_for('export_csv') }}" class="btn btn-outline-secondary btn-sm">
+        <i class="fas fa-file-csv me-1"></i> Export CSV
+      </a>
+      <a href="{{ url_for('admin_dashboard') }}" class="btn btn-outline-primary btn-sm">
+        <i class="fas fa-arrow-left me-1"></i> Admin Dashboard
+      </a>
+    </div>
+  </div>
+
+  <!-- Filters Row -->
+  <div class="eco-card p-3 mb-4 bg-light">
+    <form method="GET" action="{{ url_for('admin_complaints') }}" class="row g-2 align-items-end">
+      <div class="col-md-3">
+        <label class="form-label small fw-semibold text-muted mb-1">Filter by Ward</label>
+        <select name="ward" class="form-select form-select-sm" onchange="this.form.submit()">
+          <option value="all" {% if ward_filter == 'all' %}selected{% endif %}>All Municipal Wards</option>
+          {% for w in wards %}
+            <option value="{{ w.ward_id }}" {% if ward_filter == w.ward_id|string %}selected{% endif %}>{{ w.ward_name }}</option>
+          {% endfor %}
+        </select>
+      </div>
+
+      <div class="col-md-3">
+        <label class="form-label small fw-semibold text-muted mb-1">Filter by Status</label>
+        <select name="status" class="form-select form-select-sm" onchange="this.form.submit()">
+          <option value="all" {% if status_filter == 'all' %}selected{% endif %}>All Statuses</option>
+          <option value="AI Analysis Completed" {% if status_filter == 'AI Analysis Completed' %}selected{% endif %}>AI Analysis Completed</option>
+          <option value="Worker Assigned" {% if status_filter == 'Worker Assigned' %}selected{% endif %}>Worker Assigned</option>
+          <option value="Cleanup In Progress" {% if status_filter == 'Cleanup In Progress' %}selected{% endif %}>Cleanup In Progress</option>
+          <option value="AI Verification" {% if status_filter == 'AI Verification' %}selected{% endif %}>AI Verification Queue</option>
+          <option value="Verified and Closed" {% if status_filter == 'Verified and Closed' %}selected{% endif %}>Verified and Closed</option>
+          <option value="Rejected" {% if status_filter == 'Rejected' %}selected{% endif %}>Rejected</option>
+        </select>
+      </div>
+
+      <div class="col-md-2">
+        <label class="form-label small fw-semibold text-muted mb-1">Filter by Priority</label>
+        <select name="priority" class="form-select form-select-sm" onchange="this.form.submit()">
+          <option value="all" {% if priority_filter == 'all' %}selected{% endif %}>All Priorities</option>
+          <option value="Critical" {% if priority_filter == 'Critical' %}selected{% endif %}>Critical</option>
+          <option value="High" {% if priority_filter == 'High' %}selected{% endif %}>High</option>
+          <option value="Medium" {% if priority_filter == 'Medium' %}selected{% endif %}>Medium</option>
+          <option value="Low" {% if priority_filter == 'Low' %}selected{% endif %}>Low</option>
+        </select>
+      </div>
+
+      <div class="col-md-3">
+        <label class="form-label small fw-semibold text-muted mb-1">Filter by Category</label>
+        <select name="category" class="form-select form-select-sm" onchange="this.form.submit()">
+          <option value="all" {% if category_filter == 'all' %}selected{% endif %}>All Categories</option>
+          {% for cat in categories %}
+            <option value="{{ cat }}" {% if category_filter == cat %}selected{% endif %}>{{ cat }}</option>
+          {% endfor %}
+        </select>
+      </div>
+
+      <div class="col-md-1">
+        <a href="{{ url_for('admin_complaints') }}" class="btn btn-outline-secondary btn-sm w-100" title="Reset Filters">
+          <i class="fas fa-undo"></i>
+        </a>
+      </div>
+    </form>
+  </div>
+
+  <!-- Complaints Table Card -->
+  <div class="eco-card">
+    <div class="eco-card-body p-0">
+      {% if complaints %}
+        <div class="table-responsive">
+          <table class="eco-table">
+            <thead>
+              <tr>
+                <th>Complaint Reference</th>
+                <th>Category</th>
+                <th>Ward & Dept</th>
+                <th>Citizen</th>
+                <th>Priority</th>
+                <th>Status</th>
+                <th>Photographs</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for c in complaints %}
+                <tr>
+                  <td>
+                    <div>
+                      <strong class="text-dark d-block">{{ c.complaint_id }}</strong>
+                      <span class="small text-muted">{{ c.title }}</span>
+                      <div class="small text-muted" style="font-size:0.75rem;"><i class="fas fa-map-marker-alt text-danger"></i> {{ c.location[:30] }}</div>
+                    </div>
+                  </td>
+                  <td><span class="badge bg-light text-dark border">{{ c.category }}</span></td>
+                  <td>
+                    <div class="fw-semibold text-dark">{{ c.ward_name or 'Ward 1' }}</div>
+                    <div class="small text-muted" style="font-size:0.75rem;">{{ c.dept_name or 'Sanitation' }}</div>
+                  </td>
+                  <td>
+                    <div class="small fw-semibold">{{ c.citizen_name or 'Citizen' }}</div>
+                    <div class="text-muted" style="font-size:0.72rem;">{{ c.created_at }}</div>
+                  </td>
+                  <td>
+                    <span class="badge badge-priority-{{ c.priority|lower }}">{{ c.priority }}</span>
+                  </td>
+                  <td>
+                    <span class="badge badge-status 
+                      {% if c.status == 'Verified and Closed' %}status-closed
+                      {% elif c.status == 'Cleanup In Progress' %}status-in-progress
+                      {% elif c.status == 'Worker Assigned' %}status-assigned
+                      {% elif c.status == 'AI Verification' %}status-verification
+                      {% else %}status-ai-analysis{% endif %}">
+                      {{ c.status }}
+                    </span>
+                  </td>
+                  <td>
+                    <div class="d-flex gap-1">
+                      {% if c.before_image %}
+                        <a href="/{{ c.before_image }}" target="_blank" title="View Before Image">
+                          <img src="/{{ c.before_image }}" class="rounded border" style="width: 36px; height: 36px; object-fit: cover;">
+                        </a>
+                      {% endif %}
+                      {% if c.after_image %}
+                        <a href="/{{ c.after_image }}" target="_blank" title="View After Image">
+                          <img src="/{{ c.after_image }}" class="rounded border border-success" style="width: 36px; height: 36px; object-fit: cover;">
+                        </a>
+                      {% endif %}
+                    </div>
+                  </td>
+                  <td>
+                    <div class="d-flex gap-1">
+                      <!-- Assign Worker Button -->
+                      <button class="btn btn-sm btn-outline-warning text-dark" title="Assign Worker" data-bs-toggle="modal" data-bs-target="#assignModal-{{ c.complaint_id }}">
+                        <i class="fas fa-user-plus"></i>
+                      </button>
+
+                      <!-- Update Status Button -->
+                      <button class="btn btn-sm btn-outline-secondary" title="Change Status" data-bs-toggle="modal" data-bs-target="#statusModal-{{ c.complaint_id }}">
+                        <i class="fas fa-edit"></i>
+                      </button>
+
+                      <!-- Inspect Verification Button -->
+                      <a href="{{ url_for('admin_verification_review', complaint_id=c.complaint_id) }}" class="btn btn-sm btn-eco-primary" title="AI Verification & Close">
+                        <i class="fas fa-balance-scale"></i> Review
+                      </a>
+                    </div>
+
+                    <!-- Modal: Assign Worker -->
+                    <div class="modal fade" id="assignModal-{{ c.complaint_id }}" tabindex="-1">
+                      <div class="modal-dialog">
+                        <div class="modal-content">
+                          <form method="POST" action="{{ url_for('admin_assign_worker', complaint_id=c.complaint_id) }}">
+                            <div class="modal-header">
+                              <h5 class="modal-title fw-bold">Assign Sanitation Specialist</h5>
+                              <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                            </div>
+                            <div class="modal-body">
+                              <p class="small text-muted mb-3">Assigning <strong>{{ c.complaint_id }}</strong> ({{ c.category }}) in {{ c.ward_name }}.</p>
+                              
+                              <div class="mb-3">
+                                <label class="form-label small fw-semibold">Select Worker & Vehicle</label>
+                                <select name="worker_id" class="form-select" required>
+                                  <option value="" disabled selected>-- Choose Available Specialist --</option>
+                                  {% for w in workers %}
+                                    <option value="{{ w.worker_id }}">{{ w.name }} ({{ w.dept_name }} - {{ w.vehicle_no }})</option>
+                                  {% endfor %}
+                                </select>
+                              </div>
+
+                              <div class="mb-3">
+                                <label class="form-label small fw-semibold">Target Cleanup Deadline</label>
+                                <input type="datetime-local" name="deadline" class="form-control">
+                              </div>
+
+                              <div class="mb-3">
+                                <label class="form-label small fw-semibold">Supervisor Dispatch Instructions</label>
+                                <textarea name="notes" class="form-control" rows="2" placeholder="e.g. Bring hazardous waste container / bulk loader..."></textarea>
+                              </div>
+                            </div>
+                            <div class="modal-footer">
+                              <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Cancel</button>
+                              <button type="submit" class="btn btn-eco-primary btn-sm">Confirm Dispatch</button>
+                            </div>
+                          </form>
+                        </div>
+                      </div>
+                    </div>
+
+                    <!-- Modal: Update Status -->
+                    <div class="modal fade" id="statusModal-{{ c.complaint_id }}" tabindex="-1">
+                      <div class="modal-dialog">
+                        <div class="modal-content">
+                          <form method="POST" action="{{ url_for('admin_update_status', complaint_id=c.complaint_id) }}">
+                            <div class="modal-header">
+                              <h5 class="modal-title fw-bold">Update Complaint Status</h5>
+                              <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                            </div>
+                            <div class="modal-body">
+                              <div class="mb-3">
+                                <label class="form-label small fw-semibold">Select New Status</label>
+                                <select name="status" class="form-select" required>
+                                  <option value="Submitted" {% if c.status == 'Submitted' %}selected{% endif %}>Submitted</option>
+                                  <option value="AI Analysis Completed" {% if c.status == 'AI Analysis Completed' %}selected{% endif %}>AI Analysis Completed</option>
+                                  <option value="Worker Assigned" {% if c.status == 'Worker Assigned' %}selected{% endif %}>Worker Assigned</option>
+                                  <option value="Cleanup In Progress" {% if c.status == 'Cleanup In Progress' %}selected{% endif %}>Cleanup In Progress</option>
+                                  <option value="AI Verification" {% if c.status == 'AI Verification' %}selected{% endif %}>AI Verification Queue</option>
+                                  <option value="Verified and Closed" {% if c.status == 'Verified and Closed' %}selected{% endif %}>Verified and Closed</option>
+                                  <option value="Rejected" {% if c.status == 'Rejected' %}selected{% endif %}>Rejected</option>
+                                </select>
+                              </div>
+
+                              <div class="mb-3">
+                                <label class="form-label small fw-semibold">Official Remarks</label>
+                                <textarea name="remarks" class="form-control" rows="3" placeholder="Reason for status change or inspection findings..."></textarea>
+                              </div>
+                            </div>
+                            <div class="modal-footer">
+                              <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Cancel</button>
+                              <button type="submit" class="btn btn-eco-primary btn-sm">Save Status</button>
+                            </div>
+                          </form>
+                        </div>
+                      </div>
+                    </div>
+
+                  </td>
+                </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      {% else %}
+        <div class="p-5 text-center text-muted">
+          <i class="fas fa-search display-4 text-secondary mb-3 d-block"></i>
+          <h5>No complaints match the filter criteria.</h5>
+          <p class="small">Try resetting your ward, priority, or status filters.</p>
+          <a href="{{ url_for('admin_complaints') }}" class="btn btn-sm btn-outline-primary">Reset Filters</a>
+        </div>
+      {% endif %}
+    </div>
+  </div>
+</div>
+{% endblock %}

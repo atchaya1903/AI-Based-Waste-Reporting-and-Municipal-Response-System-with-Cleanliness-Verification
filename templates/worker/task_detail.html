@@ -1,0 +1,155 @@
+{% extends 'base.html' %}
+
+{% block title %}Task Details | {{ task.complaint_id }}{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+  <div class="d-flex flex-wrap justify-content-between align-items-center mb-4">
+    <div>
+      <div class="d-flex align-items-center gap-2">
+        <h2 class="fw-bold text-dark m-0">Cleanup Task Duty Brief</h2>
+        <span class="badge badge-priority-{{ task.priority|lower }}">{{ task.priority }} Priority</span>
+      </div>
+      <p class="text-muted small m-0">Task Reference: <strong class="text-dark">{{ task.complaint_id }}</strong> | Deadline: <strong class="text-danger">{{ task.deadline or '24 Hours' }}</strong></p>
+    </div>
+    <div class="d-flex gap-2 mt-2 mt-md-0">
+      <a href="{{ url_for('worker_dashboard') }}" class="btn btn-outline-secondary btn-sm">
+        <i class="fas fa-arrow-left me-1"></i> Back to Task Queue
+      </a>
+      {% if task.status == 'Worker Assigned' %}
+        <form method="POST" action="{{ url_for('worker_start_cleanup', complaint_id=task.complaint_id) }}">
+          <button type="submit" class="btn btn-warning btn-sm fw-semibold text-dark">
+            <i class="fas fa-play me-1"></i> Start Cleanup On-Site
+          </button>
+        </form>
+      {% endif %}
+      {% if task.status in ['Cleanup In Progress', 'Worker Assigned'] %}
+        <a href="{{ url_for('worker_upload_cleanup', complaint_id=task.complaint_id) }}" class="btn btn-eco-primary btn-sm fw-semibold">
+          <i class="fas fa-camera me-1"></i> Upload After-Cleaning Photo
+        </a>
+      {% endif %}
+    </div>
+  </div>
+
+  <!-- Verification Alert Box (if already processed or rework needed) -->
+  {% if verification %}
+    <div class="alert {% if verification.verification_status == 'Passed' %}alert-success{% elif verification.verification_status == 'Needs Review' %}alert-warning{% else %}alert-danger{% endif %} shadow-sm mb-4">
+      <div class="d-flex justify-content-between align-items-center">
+        <h5 class="alert-heading fw-bold mb-1">
+          <i class="fas {% if verification.verification_status == 'Passed' %}fa-check-circle{% else %}fa-exclamation-triangle{% endif %} me-2"></i>
+          AI Cleanliness Verification: {{ verification.verification_status }}
+        </h5>
+        <span class="badge bg-dark fs-6">{{ verification.reduction_percentage }}% Waste Reduced</span>
+      </div>
+      <p class="mb-2">{{ verification.review_notes }}</p>
+      {% if verification.verification_status == 'Failed' %}
+        <div class="mt-2">
+          <strong>Action Required:</strong> Please re-clean the area thoroughly and submit an updated after-cleaning photograph.
+          <a href="{{ url_for('worker_upload_cleanup', complaint_id=task.complaint_id) }}" class="btn btn-sm btn-danger ms-2">Re-upload Photo</a>
+        </div>
+      {% endif %}
+    </div>
+  {% endif %}
+
+  <div class="row g-4">
+    <!-- Left Column: Citizen Photo & Map -->
+    <div class="col-lg-6">
+      <div class="eco-card p-4 h-100">
+        <h5 class="fw-bold text-dark mb-3"><i class="fas fa-image text-danger me-2"></i> Citizen Reported Waste Photo</h5>
+        
+        <div class="text-center bg-light p-2 rounded border mb-3">
+          {% if task.annotated_image %}
+            <img src="/{{ task.annotated_image }}" alt="Citizen waste" class="img-fluid rounded shadow-sm">
+          {% elif task.before_image %}
+            <img src="/{{ task.before_image }}" alt="Citizen waste" class="img-fluid rounded shadow-sm">
+          {% else %}
+            <div class="p-4 text-muted">No photo attached</div>
+          {% endif %}
+        </div>
+
+        <!-- Location Navigation Box -->
+        <div class="p-3 bg-light rounded border">
+          <div class="d-flex justify-content-between align-items-start mb-2">
+            <div>
+              <strong class="text-dark d-block"><i class="fas fa-map-marker-alt text-danger me-1"></i> Site Location</strong>
+              <div class="text-muted small">{{ task.location }}</div>
+              <div class="small text-muted font-monospace">GPS: {{ task.latitude }}, {{ task.longitude }}</div>
+            </div>
+            {% if task.latitude and task.longitude %}
+              <a href="https://www.google.com/maps/dir/?api=1&destination={{ task.latitude }},{{ task.longitude }}" target="_blank" class="btn btn-sm btn-outline-primary">
+                <i class="fas fa-directions me-1"></i> Google Maps
+              </a>
+            {% endif %}
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Right Column: Task Instructions & AI Breakdown -->
+    <div class="col-lg-6">
+      <div class="eco-card p-4 h-100 d-flex flex-column">
+        <h5 class="fw-bold text-dark mb-3"><i class="fas fa-clipboard-list text-primary me-2"></i> Job Specifications</h5>
+
+        <div class="mb-3">
+          <label class="small text-muted fw-bold text-uppercase">Complaint Category</label>
+          <div class="fw-bold fs-6 text-dark">{{ task.category }}</div>
+        </div>
+
+        <div class="mb-3">
+          <label class="small text-muted fw-bold text-uppercase">Citizen Description</label>
+          <div class="p-3 bg-light rounded border small text-dark">{{ task.description }}</div>
+        </div>
+
+        {% if task.assign_notes %}
+          <div class="mb-3">
+            <label class="small text-muted fw-bold text-uppercase">Municipal Supervisor Instructions</label>
+            <div class="p-3 bg-warning bg-opacity-10 border border-warning rounded small text-dark">
+              <i class="fas fa-info-circle text-warning me-1"></i> {{ task.assign_notes }}
+            </div>
+          </div>
+        {% endif %}
+
+        <!-- AI Detected Waste Classes Breakdown -->
+        <div class="mb-4">
+          <label class="small text-muted fw-bold text-uppercase mb-2">AI-Detected Waste Classes in Area</label>
+          {% if detections %}
+            <ul class="list-group list-group-flush small border rounded">
+              {% for d in detections %}
+                <li class="list-group-item d-flex justify-content-between align-items-center">
+                  <span>
+                    <i class="fas fa-tag text-success me-2"></i>
+                    <strong>{{ d.class_label }}</strong> (Conf: {{ d.confidence }}%)
+                  </span>
+                  <span class="badge bg-secondary">{{ d.object_count }} item(s)</span>
+                </li>
+              {% endfor %}
+            </ul>
+          {% else %}
+            <p class="small text-muted">No discrete objects flagged; general street litter reported.</p>
+          {% endif %}
+        </div>
+
+        <!-- Worker Action Flow Buttons -->
+        <div class="mt-auto border-top pt-3">
+          {% if task.status == 'Worker Assigned' %}
+            <form method="POST" action="{{ url_for('worker_start_cleanup', complaint_id=task.complaint_id) }}">
+              <button type="submit" class="btn btn-warning w-100 py-2 fw-semibold text-dark shadow-sm">
+                <i class="fas fa-play me-2"></i> Confirm Arrival & Start Cleanup
+              </button>
+            </form>
+          {% elif task.status in ['Cleanup In Progress', 'AI Verification'] %}
+            <a href="{{ url_for('worker_upload_cleanup', complaint_id=task.complaint_id) }}" class="btn btn-eco-primary w-100 py-2 fw-semibold shadow-sm">
+              <i class="fas fa-camera me-2"></i> Submit After-Cleaning Photograph
+            </a>
+          {% else %}
+            <div class="alert alert-success p-2 small text-center mb-0">
+              <i class="fas fa-check-circle me-1"></i> Task completed and verified by municipality.
+            </div>
+          {% endif %}
+        </div>
+
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

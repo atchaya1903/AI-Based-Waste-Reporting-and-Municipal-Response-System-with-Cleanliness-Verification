@@ -1,0 +1,172 @@
+{% extends 'base.html' %}
+
+{% block title %}Analytics & Reports | Smart Clean Municipality{% endblock %}
+
+{% block content %}
+<div class="container-fluid px-4 py-4">
+  <div class="d-flex flex-wrap justify-content-between align-items-center mb-4">
+    <div>
+      <h2 class="fw-bold text-dark m-0">Municipal Sanitation Analytics & Environmental Reports</h2>
+      <p class="text-muted small m-0">Civic waste metrics, ward performance indicators, and AI verification statistics.</p>
+    </div>
+    <div class="d-flex gap-2">
+      <a href="{{ url_for('export_csv') }}" class="btn btn-eco-primary btn-sm">
+        <i class="fas fa-file-csv me-1"></i> Download Full CSV Report
+      </a>
+      <a href="{{ url_for('admin_dashboard') }}" class="btn btn-outline-secondary btn-sm">
+        <i class="fas fa-arrow-left me-1"></i> Admin Dashboard
+      </a>
+    </div>
+  </div>
+
+  <!-- Performance Summary Cards -->
+  <div class="row g-3 mb-4">
+    <div class="col-md-3">
+      <div class="eco-card p-3 text-center">
+        <div class="metric-value text-primary">{{ avg_reduction }}%</div>
+        <div class="metric-label">Average AI Waste Reduction</div>
+        <span class="small text-muted">Across all verified cleanups</span>
+      </div>
+    </div>
+    <div class="col-md-3">
+      <div class="eco-card p-3 text-center">
+        <div class="metric-value text-success">{{ (avg_sim * 100)|round(1) }}%</div>
+        <div class="metric-label">Mean Scene Visual Similarity</div>
+        <span class="small text-muted">Before vs After matching</span>
+      </div>
+    </div>
+    <div class="col-md-3">
+      <div class="eco-card p-3 text-center">
+        <div class="metric-value text-dark">{{ ward_performance|length }}</div>
+        <div class="metric-label">Active Municipal Wards</div>
+        <span class="small text-muted">Full spatial coverage</span>
+      </div>
+    </div>
+    <div class="col-md-3">
+      <div class="eco-card p-3 text-center">
+        <div class="metric-value text-warning">24.5 hrs</div>
+        <div class="metric-label">Average Resolution Time</div>
+        <span class="small text-muted">Complaint to verification</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Charts Row -->
+  <div class="row g-4 mb-4">
+    <div class="col-lg-6">
+      <div class="eco-card p-4 h-100">
+        <h5 class="fw-bold text-dark mb-3"><i class="fas fa-pie-chart text-success me-2"></i> Waste Incident Categories</h5>
+        <div style="height: 300px;">
+          <canvas id="analyticsCategoryChart"></canvas>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-lg-6">
+      <div class="eco-card p-4 h-100">
+        <h5 class="fw-bold text-dark mb-3"><i class="fas fa-tasks text-primary me-2"></i> Complaint Status Distribution</h5>
+        <div style="height: 300px;">
+          <canvas id="analyticsStatusChart"></canvas>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Ward Performance Table -->
+  <div class="eco-card">
+    <div class="eco-card-header">
+      <h5 class="fw-bold text-dark m-0"><i class="fas fa-trophy text-warning me-2"></i> Ward Resolution & Clearance Performance</h5>
+    </div>
+    <div class="eco-card-body p-0">
+      <div class="table-responsive">
+        <table class="eco-table">
+          <thead>
+            <tr>
+              <th>Ward Name</th>
+              <th>Total Reported Incidents</th>
+              <th>Verified & Closed Cleanups</th>
+              <th>Resolution Rate</th>
+              <th>Cleanliness Rating</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for wp in ward_performance %}
+              {% set rate = ((wp.closed / wp.total) * 100)|round(1) if wp.total > 0 else 0.0 %}
+              <tr>
+                <td><strong>{{ wp.ward_name }}</strong></td>
+                <td>{{ wp.total }}</td>
+                <td class="text-success fw-bold">{{ wp.closed }}</td>
+                <td>
+                  <div class="d-flex align-items-center gap-2">
+                    <span class="fw-semibold">{{ rate }}%</span>
+                    <div class="progress flex-grow-1" style="height: 8px; width: 80px;">
+                      <div class="progress-bar bg-success" style="width: {{ rate }}%;"></div>
+                    </div>
+                  </div>
+                </td>
+                <td>
+                  {% if rate >= 75 %}
+                    <span class="badge bg-success"><i class="fas fa-star me-1"></i> Class A Clean Zone</span>
+                  {% elif rate >= 50 %}
+                    <span class="badge bg-primary">Class B Progressive</span>
+                  {% else %}
+                    <span class="badge bg-warning text-dark">Active Remediation</span>
+                  {% endif %}
+                </td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+  document.addEventListener('DOMContentLoaded', function () {
+    // 1. Category Chart
+    const catCtx = document.getElementById('analyticsCategoryChart').getContext('2d');
+    const catLabels = [{% for c in cat_data %}"{{ c.category }}",{% endfor %}];
+    const catValues = [{% for c in cat_data %}{{ c.count }},{% endfor %}];
+
+    new Chart(catCtx, {
+      type: 'polarArea',
+      data: {
+        labels: catLabels,
+        datasets: [{
+          data: catValues,
+          backgroundColor: ['#10b981', '#3b82f6', '#f59e0b', '#ef4444', '#8b5cf6', '#06b6d4', '#64748b', '#f97316']
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: { legend: { position: 'right', labels: { boxWidth: 10, font: { size: 10 } } } }
+      }
+    });
+
+    // 2. Status Chart
+    const statusCtx = document.getElementById('analyticsStatusChart').getContext('2d');
+    const statusLabels = [{% for s in status_data %}"{{ s.status }}",{% endfor %}];
+    const statusValues = [{% for s in status_data %}{{ s.count }},{% endfor %}];
+
+    new Chart(statusCtx, {
+      type: 'doughnut',
+      data: {
+        labels: statusLabels,
+        datasets: [{
+          data: statusValues,
+          backgroundColor: ['#10b981', '#3b82f6', '#f59e0b', '#6366f1', '#ec4899', '#64748b']
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: { legend: { position: 'right', labels: { boxWidth: 10, font: { size: 10 } } } }
+      }
+    });
+  });
+</script>
+{% endblock %}

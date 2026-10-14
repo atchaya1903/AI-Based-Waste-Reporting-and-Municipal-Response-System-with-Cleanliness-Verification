@@ -1,0 +1,156 @@
+{% extends 'base.html' %}
+
+{% block title %}AI Waste Detection Results | {{ complaint.complaint_id }}{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+  <div class="d-flex flex-wrap justify-content-between align-items-center mb-4">
+    <div>
+      <div class="d-flex align-items-center gap-2">
+        <h2 class="fw-bold text-dark m-0">AI Waste Detection Results</h2>
+        <span class="badge bg-success"><i class="fas fa-check-circle me-1"></i> YOLOv8 Inference Completed</span>
+      </div>
+      <p class="text-muted small m-0">Complaint Reference: <strong class="text-dark">{{ complaint.complaint_id }}</strong> | Reported on {{ complaint.created_at }}</p>
+    </div>
+    <div class="d-flex gap-2 mt-3 mt-md-0">
+      <a href="{{ url_for('track_complaint', complaint_id=complaint.complaint_id) }}" class="btn btn-eco-primary btn-sm">
+        <i class="fas fa-search-location me-1"></i> Track Live Status
+      </a>
+      <a href="{{ url_for('citizen_complaints') }}" class="btn btn-outline-secondary btn-sm">
+        <i class="fas fa-list me-1"></i> All Complaints
+      </a>
+    </div>
+  </div>
+
+  <div class="row g-4">
+    <!-- Left Column: OpenCV Annotated Image -->
+    <div class="col-lg-6">
+      <div class="eco-card p-4 h-100">
+        <div class="d-flex justify-content-between align-items-center mb-3">
+          <h5 class="fw-bold text-dark m-0"><i class="fas fa-image text-primary me-2"></i> Annotated Waste Imagery</h5>
+          <span class="badge bg-dark">OpenCV HUD Overlay</span>
+        </div>
+
+        <div class="text-center bg-light p-2 rounded border mb-3">
+          {% if complaint.annotated_image %}
+            <img src="/{{ complaint.annotated_image }}" alt="Annotated Detections" class="img-fluid rounded shadow-sm">
+          {% elif complaint.before_image %}
+            <img src="/{{ complaint.before_image }}" alt="Original Waste" class="img-fluid rounded shadow-sm">
+          {% else %}
+            <div class="p-5 text-muted"><i class="fas fa-image fa-3x mb-2"></i><br>Image preview unavailable</div>
+          {% endif %}
+        </div>
+
+        <!-- Municipal Routing Details Card -->
+        <div class="p-3 bg-light rounded border small">
+          <h6 class="fw-bold text-dark mb-2"><i class="fas fa-route text-success me-1"></i> Automatic Municipal Allotment</h6>
+          <div class="row g-2">
+            <div class="col-6">
+              <span class="text-muted d-block">Assigned Ward:</span>
+              <strong class="text-dark">{{ complaint.ward_name or 'Central Ward' }}</strong>
+            </div>
+            <div class="col-6">
+              <span class="text-muted d-block">Sanitation Department:</span>
+              <strong class="text-dark">{{ complaint.dept_name or 'Sanitation Division' }}</strong>
+            </div>
+            <div class="col-6">
+              <span class="text-muted d-block">Location Coordinates:</span>
+              <span>{{ complaint.latitude }}, {{ complaint.longitude }}</span>
+            </div>
+            <div class="col-6">
+              <span class="text-muted d-block">Priority Level:</span>
+              <span class="badge badge-priority-{{ complaint.priority|lower }}">{{ complaint.priority }}</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Right Column: Structured Detection Breakdown Table -->
+    <div class="col-lg-6">
+      <div class="eco-card p-4 h-100">
+        <div class="d-flex justify-content-between align-items-center mb-3">
+          <h5 class="fw-bold text-dark m-0"><i class="fas fa-table text-success me-2"></i> Detected Waste Inventory</h5>
+          <span class="badge bg-primary">{{ detections|length }} Items Identified</span>
+        </div>
+
+        {% if detections %}
+          <div class="table-responsive mb-4">
+            <table class="table table-hover align-middle small">
+              <thead class="table-light">
+                <tr>
+                  <th>Object</th>
+                  <th>Waste Category</th>
+                  <th>Confidence</th>
+                  <th>Qty</th>
+                  <th>Recommended Disposal</th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for det in detections %}
+                  <tr>
+                    <td><strong>{{ det.class_label }}</strong></td>
+                    <td>
+                      {% if 'Recyclable' in det.class_label or det.class_label in ['Bottle', 'Cup', 'Wine glass', 'Bowl', 'Can'] %}
+                        <span class="badge bg-primary text-white">Recyclable Waste</span>
+                      {% elif det.class_label in ['Banana', 'Apple', 'Sandwich', 'Orange', 'Broccoli', 'Carrot'] %}
+                        <span class="badge bg-success text-white">Biodegradable Waste</span>
+                      {% elif det.class_label in ['Cell phone', 'Laptop', 'Mouse', 'Keyboard', 'Tv'] %}
+                        <span class="badge bg-danger text-white">Hazardous Waste</span>
+                      {% else %}
+                        <span class="badge bg-secondary text-white">Non-recyclable Waste</span>
+                      {% endif %}
+                    </td>
+                    <td>
+                      <div class="d-flex align-items-center gap-2">
+                        <span class="fw-bold">{{ det.confidence }}%</span>
+                        <div class="progress flex-grow-1" style="height: 6px; width: 50px;">
+                          <div class="progress-bar bg-success" style="width: {{ det.confidence }}%;"></div>
+                        </div>
+                      </div>
+                    </td>
+                    <td>{{ det.object_count }}</td>
+                    <td class="text-muted" style="font-size: 0.8rem;">
+                      {% if det.class_label in ['Bottle', 'Can', 'Cup'] %}
+                        Mechanical shredding & recycling unit.
+                      {% elif det.class_label in ['Banana', 'Apple', 'Orange'] %}
+                        Municipal wet compost processing.
+                      {% elif det.class_label in ['Cell phone', 'Laptop'] %}
+                        Certified e-waste collection queue.
+                      {% else %}
+                        Municipal solid waste sorting station.
+                      {% endif %}
+                    </td>
+                  </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+        {% else %}
+          <div class="alert alert-warning py-3">
+            <i class="fas fa-exclamation-triangle me-2"></i>
+            No discrete bounding box detected at standard confidence threshold (25%). The general scene has been categorized as <strong>{{ complaint.category }}</strong> and routed to the ward sanitation team for manual inspection.
+          </div>
+        {% endif %}
+
+        <!-- Cleanliness Verification Info Box -->
+        <div class="card bg-light border-0 p-3 mt-auto">
+          <h6 class="fw-bold text-dark mb-1"><i class="fas fa-shield-alt text-success me-1"></i> Next Municipal Step</h6>
+          <p class="small text-muted mb-3">
+            The assigned municipal sanitation worker will arrive on site with vehicle, sweep the area, and upload an after-cleaning photo. Our AI will automatically verify whether the waste has been eradicated.
+          </p>
+          <div class="d-flex gap-2">
+            <a href="{{ url_for('track_complaint', complaint_id=complaint.complaint_id) }}" class="btn btn-eco-primary btn-sm flex-grow-1">
+              <i class="fas fa-history me-1"></i> Track Progress
+            </a>
+            <a href="{{ url_for('report_waste') }}" class="btn btn-outline-secondary btn-sm">
+              <i class="fas fa-plus me-1"></i> Report Another
+            </a>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

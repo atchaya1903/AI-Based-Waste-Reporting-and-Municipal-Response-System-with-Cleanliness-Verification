@@ -1,0 +1,236 @@
+{% extends 'base.html' %}
+
+{% block title %}Track Waste Complaint | Smart Clean Municipality{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+  <!-- Search Header -->
+  <div class="row justify-content-center mb-4">
+    <div class="col-lg-8">
+      <div class="eco-card p-4 text-center">
+        <h3 class="fw-bold text-dark mb-2">Track Municipal Complaint Status</h3>
+        <p class="text-muted small mb-3">Enter your unique Complaint Reference ID (e.g., <code>CMP-2026-X101</code>) to view live cleanup progress.</p>
+        
+        <form method="GET" action="{{ url_for('track_complaint') }}" class="d-flex gap-2 max-w-500 mx-auto">
+          <input type="text" name="cid" class="form-control" placeholder="Enter Complaint ID (e.g. CMP-2026-X101)" value="{{ searched_id or '' }}" required autofocus>
+          <button type="submit" class="btn btn-eco-primary px-4 fw-semibold">
+            <i class="fas fa-search me-1"></i> Track
+          </button>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  {% if complaint %}
+    <!-- Complaint Overview Banner -->
+    <div class="eco-card p-4 mb-4">
+      <div class="d-flex flex-wrap justify-content-between align-items-center border-bottom pb-3 mb-3">
+        <div>
+          <span class="badge bg-light text-dark border me-2">ID: {{ complaint.complaint_id }}</span>
+          <span class="badge badge-priority-{{ complaint.priority|lower }} me-2">Priority: {{ complaint.priority }}</span>
+          <span class="badge badge-status 
+            {% if complaint.status == 'Verified and Closed' %}status-closed
+            {% elif complaint.status == 'Cleanup In Progress' %}status-in-progress
+            {% elif complaint.status == 'Worker Assigned' %}status-assigned
+            {% elif complaint.status == 'AI Verification' %}status-verification
+            {% else %}status-ai-analysis{% endif %}">
+            Status: {{ complaint.status }}
+          </span>
+        </div>
+        <div class="small text-muted mt-2 mt-md-0">
+          <i class="fas fa-calendar-alt me-1"></i> Registered: {{ complaint.created_at }}
+        </div>
+      </div>
+
+      <div class="row g-3">
+        <div class="col-md-8">
+          <h4 class="fw-bold text-dark mb-1">{{ complaint.title }}</h4>
+          <p class="text-muted mb-2">{{ complaint.description }}</p>
+          <div class="small text-muted">
+            <i class="fas fa-map-marker-alt text-danger me-1"></i> <strong>Location:</strong> {{ complaint.location }}
+          </div>
+        </div>
+        <div class="col-md-4 bg-light p-3 rounded border small">
+          <div class="mb-1"><strong>Assigned Ward:</strong> {{ complaint.ward_name or 'Unassigned' }}</div>
+          <div class="mb-1"><strong>Department:</strong> {{ complaint.dept_name or 'Sanitation' }}</div>
+          {% if assignment %}
+            <div class="mb-1"><strong>Sanitation Worker:</strong> {{ assignment.worker_name }}</div>
+            <div class="mb-1"><strong>Vehicle Assigned:</strong> <code>{{ assignment.vehicle_no }}</code></div>
+            {% if assignment.deadline %}
+              <div><strong>Resolution Deadline:</strong> {{ assignment.deadline }}</div>
+            {% endif %}
+          {% else %}
+            <div class="text-warning"><strong>Worker:</strong> Awaiting municipal dispatch</div>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+
+    <!-- Visual Stepper Progress Workflow -->
+    <div class="eco-card p-4 mb-4">
+      <h5 class="fw-bold text-dark mb-3"><i class="fas fa-stream text-primary me-2"></i> Resolution Workflow</h5>
+
+      {% set steps = [
+        ('Submitted', 'Submitted', 'fas fa-file-alt'),
+        ('AI Analysis Completed', 'AI Analysis', 'fas fa-robot'),
+        ('Worker Assigned', 'Worker Assigned', 'fas fa-hard-hat'),
+        ('Cleanup In Progress', 'Cleaning', 'fas fa-broom'),
+        ('AI Verification', 'AI Verification', 'fas fa-balance-scale'),
+        ('Verified and Closed', 'Verified & Closed', 'fas fa-check-circle')
+      ] %}
+
+      {% set status_order = {
+        'Submitted': 1,
+        'AI Analysis Completed': 2,
+        'Municipality Assigned': 2,
+        'Worker Assigned': 3,
+        'Cleanup In Progress': 4,
+        'Cleanup Completed': 5,
+        'AI Verification': 5,
+        'Verified and Closed': 6
+      } %}
+      {% set current_level = status_order.get(complaint.status, 1) %}
+
+      <div class="stepper-container">
+        {% for step_id, step_label, step_icon in steps %}
+          {% set step_level = loop.index %}
+          <div class="step-item {% if step_level < current_level %}completed{% elif step_level == current_level %}active{% endif %}">
+            <div class="step-circle">
+              <i class="{{ step_icon }}"></i>
+            </div>
+            <div class="step-label">{{ step_label }}</div>
+          </div>
+        {% endfor %}
+      </div>
+    </div>
+
+    <!-- Before & After Photographic Evidence & AI Cleanliness Report -->
+    <div class="row g-4 mb-4">
+      <div class="col-lg-6">
+        <div class="eco-card p-4 h-100">
+          <h5 class="fw-bold text-dark mb-3"><i class="fas fa-images text-success me-2"></i> Photographic Evidence</h5>
+          <div class="row g-3">
+            <div class="col-6">
+              <div class="text-center">
+                <span class="badge bg-danger mb-2">BEFORE CLEANING</span>
+                {% set before_img = none %}
+                {% for img in images if img.image_type == 'before' %}
+                  {% set before_img = img %}
+                {% endfor %}
+                {% if before_img %}
+                  <img src="/{{ before_img.annotated_path or before_img.file_path }}" class="img-fluid rounded border shadow-sm" alt="Before">
+                {% else %}
+                  <div class="p-4 bg-light text-muted border rounded small">No photo available</div>
+                {% endif %}
+              </div>
+            </div>
+
+            <div class="col-6">
+              <div class="text-center">
+                <span class="badge bg-success mb-2">AFTER CLEANING</span>
+                {% set after_img = none %}
+                {% for img in images if img.image_type == 'after' %}
+                  {% set after_img = img %}
+                {% endfor %}
+                {% if after_img %}
+                  <img src="/{{ after_img.annotated_path or after_img.file_path }}" class="img-fluid rounded border shadow-sm" alt="After">
+                {% else %}
+                  <div class="p-4 bg-light text-muted border rounded small">
+                    <i class="fas fa-clock fa-2x mb-2 d-block"></i>
+                    Awaiting worker completion upload
+                  </div>
+                {% endif %}
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="col-lg-6">
+        <div class="eco-card p-4 h-100">
+          <h5 class="fw-bold text-dark mb-3"><i class="fas fa-microchip text-primary me-2"></i> AI Cleanliness Verification</h5>
+          {% if verification %}
+            <div class="p-3 rounded border mb-3 {% if verification.verification_status == 'Passed' %}bg-success bg-opacity-10 border-success{% elif verification.verification_status == 'Needs Review' %}bg-warning bg-opacity-10 border-warning{% else %}bg-danger bg-opacity-10 border-danger{% endif %}">
+              <div class="d-flex justify-content-between align-items-center mb-2">
+                <span class="fw-bold text-dark">Verification Result:</span>
+                <span class="badge {% if verification.verification_status == 'Passed' %}bg-success{% elif verification.verification_status == 'Needs Review' %}bg-warning text-dark{% else %}bg-danger{% endif %} fs-6">
+                  {{ verification.verification_status }}
+                </span>
+              </div>
+              <div class="row g-2 text-center my-3">
+                <div class="col-4">
+                  <div class="small text-muted">Before Objects</div>
+                  <strong class="fs-5 text-danger">{{ verification.before_count }}</strong>
+                </div>
+                <div class="col-4 border-start border-end">
+                  <div class="small text-muted">After Objects</div>
+                  <strong class="fs-5 text-success">{{ verification.after_count }}</strong>
+                </div>
+                <div class="col-4">
+                  <div class="small text-muted">Waste Reduction</div>
+                  <strong class="fs-5 text-primary">{{ verification.reduction_percentage }}%</strong>
+                </div>
+              </div>
+              <p class="small text-muted mb-0">
+                <strong>AI Evaluation:</strong> {{ verification.review_notes }}
+              </p>
+            </div>
+          {% else %}
+            <div class="text-center p-4 text-muted bg-light rounded border">
+              <i class="fas fa-hourglass-start fa-2x mb-2 d-block"></i>
+              <h6>Cleanliness verification pending.</h6>
+              <p class="small mb-0">Once the sanitation worker finishes the task and uploads the after-cleaning photograph, the AI will compute the waste reduction percentage and evaluate cleanliness.</p>
+            </div>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+
+    <!-- Status History Audit Trail -->
+    <div class="eco-card p-4">
+      <h5 class="fw-bold text-dark mb-3"><i class="fas fa-history text-secondary me-2"></i> Status Audit History</h5>
+      {% if history %}
+        <div class="table-responsive">
+          <table class="eco-table">
+            <thead>
+              <tr>
+                <th>Timestamp</th>
+                <th>Transition</th>
+                <th>Updated By</th>
+                <th>Remarks / Evidence</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for h in history %}
+                <tr>
+                  <td class="small text-muted">{{ h.timestamp }}</td>
+                  <td>
+                    <span class="badge bg-light text-dark border">{{ h.previous_status or 'New' }}</span>
+                    <i class="fas fa-arrow-right mx-1 text-muted" style="font-size:0.75rem;"></i>
+                    <span class="badge bg-dark">{{ h.new_status }}</span>
+                  </td>
+                  <td>
+                    <span class="fw-semibold">{{ h.updater_name or 'System' }}</span>
+                    <span class="small text-muted">({{ h.updater_role or 'Automated' }})</span>
+                  </td>
+                  <td class="small">{{ h.remarks or 'Status updated.' }}</td>
+                </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      {% else %}
+        <div class="text-muted small">No history logged yet.</div>
+      {% endif %}
+    </div>
+
+  {% elif searched_id %}
+    <div class="eco-card p-5 text-center text-muted">
+      <i class="fas fa-search display-4 text-secondary mb-3 d-block"></i>
+      <h4>Complaint Reference Not Found</h4>
+      <p>No complaint found with ID "<code>{{ searched_id }}</code>". Please double-check your complaint ID or check your complaints list.</p>
+      <a href="{{ url_for('citizen_complaints') }}" class="btn btn-outline-primary btn-sm">View My Complaints</a>
+    </div>
+  {% endif %}
+</div>
+{% endblock %}

@@ -1,0 +1,64 @@
+{% extends 'base.html' %}
+
+{% block title %}Register | Smart Clean Municipality{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+  <div class="row justify-content-center">
+    <div class="col-md-7 col-lg-6">
+      <div class="eco-card p-4 p-md-5">
+        <div class="text-center mb-4">
+          <div class="brand-icon d-inline-block mb-3 p-3" style="font-size: 1.8rem;">
+            <i class="fas fa-user-plus"></i>
+          </div>
+          <h3 class="fw-bold text-dark">Citizen Registration</h3>
+          <p class="text-muted small">Join the municipal clean city initiative to report and track waste issues.</p>
+        </div>
+
+        <form method="POST" action="{{ url_for('register') }}">
+          <div class="mb-3">
+            <label class="form-label small fw-semibold text-muted">Full Name</label>
+            <div class="input-group">
+              <span class="input-group-text bg-light"><i class="fas fa-user text-muted"></i></span>
+              <input type="text" name="name" class="form-control" placeholder="Ananya Verma" required autofocus>
+            </div>
+          </div>
+
+          <div class="mb-3">
+            <label class="form-label small fw-semibold text-muted">Email Address</label>
+            <div class="input-group">
+              <span class="input-group-text bg-light"><i class="fas fa-envelope text-muted"></i></span>
+              <input type="email" name="email" class="form-control" placeholder="citizen@clean.gov" required>
+            </div>
+          </div>
+
+          <div class="mb-3">
+            <label class="form-label small fw-semibold text-muted">Phone Number</label>
+            <div class="input-group">
+              <span class="input-group-text bg-light"><i class="fas fa-phone text-muted"></i></span>
+              <input type="tel" name="phone" class="form-control" placeholder="+91 98450 33003">
+            </div>
+          </div>
+
+          <div class="mb-4">
+            <label class="form-label small fw-semibold text-muted">Password</label>
+            <div class="input-group">
+              <span class="input-group-text bg-light"><i class="fas fa-lock text-muted"></i></span>
+              <input type="password" name="password" class="form-control" placeholder="••••••••" required minlength="6">
+            </div>
+            <div class="form-text small">At least 6 characters.</div>
+          </div>
+
+          <button type="submit" class="btn btn-eco-primary w-100 py-2 fw-semibold mb-3">
+            <i class="fas fa-check-circle me-2"></i> Create Citizen Account
+          </button>
+        </form>
+
+        <div class="text-center small text-muted">
+          Already have an account? <a href="{{ url_for('login') }}" class="text-success fw-semibold">Sign in here</a>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,217 @@
+/* Dashboard Sidebar and Main Layout */
+.dashboard-wrapper {
+  display: flex;
+  min-height: calc(100vh - 65px);
+}
+
+.dashboard-sidebar {
+  width: 260px;
+  background-color: #0f172a;
+  color: #94a3b8;
+  display: flex;
+  flex-direction: column;
+  flex-shrink: 0;
+  border-right: 1px solid #1e293b;
+  transition: width 0.3s ease;
+}
+
+.sidebar-header {
+  padding: 1.5rem 1.25rem 1rem;
+  border-bottom: 1px solid #1e293b;
+}
+
+.sidebar-menu {
+  list-style: none;
+  padding: 1rem 0;
+  margin: 0;
+}
+
+.sidebar-item {
+  margin-bottom: 0.25rem;
+}
+
+.sidebar-link {
+  display: flex;
+  align-items: center;
+  gap: 0.85rem;
+  padding: 0.75rem 1.25rem;
+  color: #94a3b8;
+  text-decoration: none;
+  font-weight: 500;
+  font-size: 0.92rem;
+  border-left: 3px solid transparent;
+  transition: all 0.2s ease;
+}
+
+.sidebar-link i {
+  font-size: 1.1rem;
+  width: 22px;
+  text-align: center;
+}
+
+.sidebar-link:hover, .sidebar-link.active {
+  color: #ffffff;
+  background-color: #1e293b;
+  border-left-color: #10b981;
+}
+
+.sidebar-link.active i {
+  color: #10b981;
+}
+
+.sidebar-badge {
+  margin-left: auto;
+  font-size: 0.75rem;
+  padding: 0.2rem 0.5rem;
+  border-radius: 12px;
+}
+
+/* Main Dashboard Area */
+.dashboard-main {
+  flex-grow: 1;
+  background-color: #f8fafc;
+  padding: 2rem;
+  overflow-y: auto;
+}
+
+.dashboard-topbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 2rem;
+}
+
+.dashboard-title {
+  font-size: 1.6rem;
+  font-weight: 700;
+  color: #0f172a;
+  margin: 0;
+}
+
+.dashboard-subtitle {
+  color: #64748b;
+  font-size: 0.9rem;
+  margin-top: 0.25rem;
+}
+
+/* KPI Metric Cards */
+.metric-card {
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  padding: 1.4rem;
+  display: flex;
+  align-items: center;
+  gap: 1.25rem;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.metric-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 16px rgba(0,0,0,0.08);
+}
+
+.metric-icon-box {
+  width: 54px;
+  height: 54px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.4rem;
+  flex-shrink: 0;
+}
+
+.icon-box-emerald { background-color: #ecfdf5; color: #059669; }
+.icon-box-blue { background-color: #eff6ff; color: #2563eb; }
+.icon-box-amber { background-color: #fffbeb; color: #d97706; }
+.icon-box-purple { background-color: #faf5ff; color: #9333ea; }
+.icon-box-red { background-color: #fef2f2; color: #dc2626; }
+
+.metric-value {
+  font-size: 1.8rem;
+  font-weight: 800;
+  color: #0f172a;
+  line-height: 1.1;
+}
+
+.metric-label {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: #64748b;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  margin-top: 0.25rem;
+}
+
+/* Responsive Table */
+.eco-table {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+}
+
+.eco-table th {
+  background-color: #f8fafc;
+  color: #475569;
+  font-weight: 600;
+  font-size: 0.82rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  padding: 0.9rem 1.1rem;
+  border-bottom: 2px solid #e2e8f0;
+}
+
+.eco-table td {
+  padding: 1rem 1.1rem;
+  border-bottom: 1px solid #f1f5f9;
+  font-size: 0.9rem;
+  color: #334155;
+  vertical-align: middle;
+}
+
+.eco-table tbody tr:hover {
+  background-color: #f8fafc;
+}
+
+/* Quick User Role Tag */
+.user-role-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.25rem 0.65rem;
+  border-radius: 6px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+}
+
+.role-admin { background: #fee2e2; color: #991b1b; }
+.role-worker { background: #fef3c7; color: #92400e; }
+.role-citizen { background: #d1fae5; color: #065f46; }
+
+@media (max-width: 992px) {
+  .dashboard-wrapper {
+    flex-direction: column;
+  }
+  .dashboard-sidebar {
+    width: 100%;
+    border-right: none;
+    border-bottom: 1px solid #1e293b;
+  }
+  .sidebar-menu {
+    display: flex;
+    flex-wrap: wrap;
+    padding: 0.5rem;
+  }
+  .sidebar-link {
+    padding: 0.5rem 0.85rem;
+    border-left: none;
+    border-bottom: 2px solid transparent;
+  }
+  .sidebar-link:hover, .sidebar-link.active {
+    border-left-color: transparent;
+    border-bottom-color: #10b981;
+  }
+}

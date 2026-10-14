@@ -1,0 +1,221 @@
+{% extends 'base.html' %}
+
+{% block title %}Municipality Admin Dashboard | Smart Clean Municipality{% endblock %}
+
+{% block content %}
+<div class="dashboard-wrapper">
+  <!-- Sidebar -->
+  <aside class="dashboard-sidebar">
+    <div class="sidebar-header">
+      <div class="small text-uppercase text-muted fw-bold">Municipal Headquarters</div>
+      <div class="text-white fw-semibold mt-1">{{ current_user.name }}</div>
+      <div class="small text-emerald"><i class="fas fa-shield-alt me-1"></i> Role: Authorized Admin</div>
+    </div>
+    <ul class="sidebar-menu">
+      <li class="sidebar-item">
+        <a href="{{ url_for('admin_dashboard') }}" class="sidebar-link active">
+          <i class="fas fa-th-large"></i>
+          <span>Overview & Map</span>
+        </a>
+      </li>
+      <li class="sidebar-item">
+        <a href="{{ url_for('admin_complaints') }}" class="sidebar-link">
+          <i class="fas fa-clipboard-list"></i>
+          <span>Manage Complaints</span>
+          {% if pending > 0 %}
+            <span class="badge bg-danger sidebar-badge">{{ pending }}</span>
+          {% endif %}
+        </a>
+      </li>
+      <li class="sidebar-item">
+        <a href="{{ url_for('admin_wards') }}" class="sidebar-link">
+          <i class="fas fa-map-marked"></i>
+          <span>Wards & Routing</span>
+        </a>
+      </li>
+      <li class="sidebar-item">
+        <a href="{{ url_for('admin_analytics') }}" class="sidebar-link">
+          <i class="fas fa-chart-line"></i>
+          <span>Analytics & Reports</span>
+        </a>
+      </li>
+      <li class="sidebar-item">
+        <a href="{{ url_for('profile') }}" class="sidebar-link">
+          <i class="fas fa-user-cog"></i>
+          <span>Admin Profile</span>
+        </a>
+      </li>
+    </ul>
+  </aside>
+
+  <!-- Main Content -->
+  <main class="dashboard-main">
+    <div class="dashboard-topbar">
+      <div>
+        <h2 class="dashboard-title">Municipal Command & Control Dashboard</h2>
+        <div class="dashboard-subtitle">Real-time civic waste telemetry, AI verification queues, and field worker dispatch.</div>
+      </div>
+      <div class="d-flex gap-2">
+        <a href="{{ url_for('export_csv') }}" class="btn btn-outline-secondary btn-sm">
+          <i class="fas fa-file-csv me-1"></i> Export CSV
+        </a>
+        <a href="{{ url_for('admin_complaints') }}" class="btn btn-eco-primary btn-sm">
+          <i class="fas fa-tasks me-1"></i> Dispatch Queue
+        </a>
+      </div>
+    </div>
+
+    <!-- KPI Metric Cards -->
+    <div class="row g-3 mb-4">
+      <div class="col-sm-6 col-xl-2">
+        <div class="metric-card p-3">
+          <div>
+            <div class="metric-value">{{ total }}</div>
+            <div class="metric-label" style="font-size: 0.72rem;">Total Reports</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="col-sm-6 col-xl-2">
+        <div class="metric-card p-3">
+          <div>
+            <div class="metric-value text-danger">{{ pending }}</div>
+            <div class="metric-label" style="font-size: 0.72rem;">Pending Triage</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="col-sm-6 col-xl-2">
+        <div class="metric-card p-3">
+          <div>
+            <div class="metric-value text-warning">{{ in_progress }}</div>
+            <div class="metric-label" style="font-size: 0.72rem;">Field In Progress</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="col-sm-6 col-xl-3">
+        <div class="metric-card p-3">
+          <div>
+            <div class="metric-value text-primary">{{ verification_queue }}</div>
+            <div class="metric-label" style="font-size: 0.72rem;">AI Verification Queue</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="col-sm-6 col-xl-3">
+        <div class="metric-card p-3">
+          <div>
+            <div class="metric-value text-success">{{ pass_rate }}%</div>
+            <div class="metric-label" style="font-size: 0.72rem;">Cleanliness Pass Rate</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Leaflet City Complaints Map -->
+    <div class="eco-card mb-4">
+      <div class="eco-card-header">
+        <div>
+          <h5 class="fw-bold text-dark m-0"><i class="fas fa-map-marked-alt text-danger me-2"></i> Municipal Complaint Spatial Map</h5>
+          <small class="text-muted">Live geographical distribution of waste incidents across city wards with status markers.</small>
+        </div>
+        <div class="d-flex align-items-center gap-2 small">
+          <span class="d-flex align-items-center gap-1"><span style="width:10px; height:10px; background:#4f46e5; border-radius:50%; display:inline-block;"></span> New AI Scan</span>
+          <span class="d-flex align-items-center gap-1"><span style="width:10px; height:10px; background:#ea580c; border-radius:50%; display:inline-block;"></span> In Progress</span>
+          <span class="d-flex align-items-center gap-1"><span style="width:10px; height:10px; background:#10b981; border-radius:50%; display:inline-block;"></span> Verified Clean</span>
+        </div>
+      </div>
+      <div class="eco-card-body p-2">
+        <div id="adminComplaintMap" class="leaflet-map-dashboard"></div>
+      </div>
+    </div>
+
+    <!-- Charts Row -->
+    <div class="row g-4">
+      <div class="col-lg-7">
+        <div class="eco-card h-100">
+          <div class="eco-card-header">
+            <h5 class="fw-bold text-dark m-0"><i class="fas fa-chart-bar text-primary me-2"></i> Ward-Wise Complaint Distribution</h5>
+          </div>
+          <div class="eco-card-body">
+            <canvas id="wardChart" style="max-height: 280px;"></canvas>
+          </div>
+        </div>
+      </div>
+
+      <div class="col-lg-5">
+        <div class="eco-card h-100">
+          <div class="eco-card-header">
+            <h5 class="fw-bold text-dark m-0"><i class="fas fa-pie-chart text-success me-2"></i> Waste Category Distribution</h5>
+          </div>
+          <div class="eco-card-body d-flex flex-column justify-content-center">
+            <canvas id="categoryChart" style="max-height: 260px;"></canvas>
+          </div>
+        </div>
+      </div>
+    </div>
+  </main>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script src="{{ url_for('static', filename='js/admin_map.js') }}"></script>
+<script>
+  document.addEventListener('DOMContentLoaded', function () {
+    // 1. Initialize Map
+    const complaintsData = {{ map_complaints|safe }};
+    const wardsData = {{ wards_list|safe }};
+    initAdminComplaintMap('adminComplaintMap', complaintsData, wardsData);
+
+    // 2. Ward Chart
+    const wardCtx = document.getElementById('wardChart').getContext('2d');
+    const wardLabels = [{% for w in ward_counts %}"{{ w.ward_name }}",{% endfor %}];
+    const wardValues = [{% for w in ward_counts %}{{ w.count }},{% endfor %}];
+
+    new Chart(wardCtx, {
+      type: 'bar',
+      data: {
+        labels: wardLabels,
+        datasets: [{
+          label: 'Complaints',
+          data: wardValues,
+          backgroundColor: '#3b82f6',
+          borderRadius: 6
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: { legend: { display: false } },
+        scales: { y: { beginAtZero: true, ticks: { stepSize: 1 } } }
+      }
+    });
+
+    // 3. Category Chart
+    const catCtx = document.getElementById('categoryChart').getContext('2d');
+    const catLabels = [{% for c in cat_counts %}"{{ c.category }}",{% endfor %}];
+    const catValues = [{% for c in cat_counts %}{{ c.count }},{% endfor %}];
+
+    new Chart(catCtx, {
+      type: 'doughnut',
+      data: {
+        labels: catLabels,
+        datasets: [{
+          data: catValues,
+          backgroundColor: ['#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#06b6d4', '#64748b', '#ec4899', '#f97316'],
+          borderWidth: 2,
+          borderColor: '#ffffff'
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          legend: { position: 'bottom', labels: { boxWidth: 10, font: { size: 10 } } }
+        }
+      }
+    });
+  });
+</script>
+{% endblock %}

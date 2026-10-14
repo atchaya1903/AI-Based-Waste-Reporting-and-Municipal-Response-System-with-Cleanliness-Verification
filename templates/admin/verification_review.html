@@ -1,0 +1,181 @@
+{% extends 'base.html' %}
+
+{% block title %}AI Verification Review | {{ complaint.complaint_id }}{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+  <div class="d-flex flex-wrap justify-content-between align-items-center mb-4">
+    <div>
+      <div class="d-flex align-items-center gap-2">
+        <h2 class="fw-bold text-dark m-0">AI Cleanliness Verification Review</h2>
+        <span class="badge {% if verification and verification.verification_status == 'Passed' %}bg-success{% elif verification and verification.verification_status == 'Needs Review' %}bg-warning text-dark{% else %}bg-secondary{% endif %} fs-6">
+          {{ verification.verification_status if verification else 'Awaiting Review' }}
+        </span>
+      </div>
+      <p class="text-muted small m-0">Complaint Ref: <strong class="text-dark">{{ complaint.complaint_id }}</strong> | Reported by {{ complaint.citizen_name or 'Citizen' }} | Ward: {{ complaint.ward_name }}</p>
+    </div>
+    <div class="d-flex gap-2 mt-2 mt-md-0">
+      <a href="{{ url_for('admin_complaints') }}" class="btn btn-outline-secondary btn-sm">
+        <i class="fas fa-arrow-left me-1"></i> Back to Complaints List
+      </a>
+      <a href="{{ url_for('track_complaint', complaint_id=complaint.complaint_id) }}" target="_blank" class="btn btn-outline-primary btn-sm">
+        <i class="fas fa-external-link-alt me-1"></i> Public Tracking View
+      </a>
+    </div>
+  </div>
+
+  <!-- AI Cleanliness Metrics Header Card -->
+  {% if verification %}
+    <div class="eco-card p-4 mb-4 border-{% if verification.verification_status == 'Passed' %}success{% elif verification.verification_status == 'Needs Review' %}warning{% else %}danger{% endif %}">
+      <div class="row g-4 align-items-center">
+        <div class="col-md-3 text-center border-end">
+          <div class="display-4 fw-bold {% if verification.verification_status == 'Passed' %}text-success{% elif verification.verification_status == 'Needs Review' %}text-warning{% else %}text-danger{% endif %}">
+            {{ verification.reduction_percentage }}%
+          </div>
+          <div class="small fw-semibold text-muted text-uppercase">Waste Reduction Metric</div>
+          <span class="badge bg-light text-dark border mt-1">Formula: ((B − A) / B) × 100</span>
+        </div>
+
+        <div class="col-md-3 text-center border-end">
+          <div class="row g-2">
+            <div class="col-6">
+              <span class="text-muted small d-block">Before Count</span>
+              <strong class="fs-4 text-danger">{{ verification.before_count }}</strong>
+            </div>
+            <div class="col-6 border-start">
+              <span class="text-muted small d-block">After Count</span>
+              <strong class="fs-4 text-success">{{ verification.after_count }}</strong>
+            </div>
+          </div>
+          <div class="small text-muted mt-2">
+            <i class="fas fa-compress-arrows-alt me-1"></i> Clutter Drop: {{ verification.clutter_reduction }}%
+          </div>
+        </div>
+
+        <div class="col-md-3 text-center border-end">
+          <div class="fs-4 fw-bold text-dark">{{ (verification.similarity_score * 100)|round(1) }}%</div>
+          <div class="small fw-semibold text-muted text-uppercase">Scene Visual Similarity</div>
+          <span class="small text-muted">ORB & Histogram Correlation</span>
+        </div>
+
+        <div class="col-md-3">
+          <div class="small fw-bold text-dark mb-1">AI Recommendation:</div>
+          <p class="small text-muted mb-0">{{ verification.review_notes }}</p>
+        </div>
+      </div>
+    </div>
+  {% else %}
+    <div class="alert alert-warning py-3 mb-4">
+      <i class="fas fa-exclamation-triangle me-2"></i> Cleanliness verification has not been run yet because the sanitation worker has not submitted an after-cleaning photo.
+    </div>
+  {% endif %}
+
+  <!-- Visual Evidence: Interactive Before / After Comparison -->
+  <div class="row g-4 mb-4">
+    <div class="col-lg-6">
+      <div class="eco-card p-3 h-100">
+        <div class="d-flex justify-content-between align-items-center mb-2">
+          <h6 class="fw-bold text-danger m-0"><i class="fas fa-exclamation-circle me-1"></i> Before Cleaning (Citizen Complaint)</h6>
+          <span class="badge bg-danger">Before Scan</span>
+        </div>
+        <div class="text-center bg-light p-2 rounded border">
+          {% if annotated_before %}
+            <img src="/{{ annotated_before }}" alt="Before Cleaning" class="img-fluid rounded shadow-sm" style="max-height: 380px;">
+          {% elif before_img %}
+            <img src="/{{ before_img }}" alt="Before Cleaning" class="img-fluid rounded shadow-sm" style="max-height: 380px;">
+          {% else %}
+            <div class="p-5 text-muted">Before photo unavailable</div>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+
+    <div class="col-lg-6">
+      <div class="eco-card p-3 h-100">
+        <div class="d-flex justify-content-between align-items-center mb-2">
+          <h6 class="fw-bold text-success m-0"><i class="fas fa-check-circle me-1"></i> After Cleaning (Worker Submission)</h6>
+          <span class="badge bg-success">After Scan</span>
+        </div>
+        <div class="text-center bg-light p-2 rounded border">
+          {% if annotated_after %}
+            <img src="/{{ annotated_after }}" alt="After Cleaning" class="img-fluid rounded shadow-sm" style="max-height: 380px;">
+          {% elif after_img %}
+            <img src="/{{ after_img }}" alt="After Cleaning" class="img-fluid rounded shadow-sm" style="max-height: 380px;">
+          {% else %}
+            <div class="p-5 text-muted">
+              <i class="fas fa-clock fa-2x mb-2 d-block"></i>
+              Awaiting worker submission
+            </div>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Composite Side-by-Side Audit Card -->
+  {% if after_img %}
+    <div class="eco-card p-4 mb-4">
+      <div class="d-flex justify-content-between align-items-center mb-3">
+        <h5 class="fw-bold text-dark m-0"><i class="fas fa-columns text-primary me-2"></i> Side-by-Side Composite Audit Evidence</h5>
+        <span class="badge bg-dark">Official Municipal Record</span>
+      </div>
+      <div class="text-center bg-light p-2 rounded border">
+        <img src="/{{ composite_img }}" alt="Side-by-Side Composite" class="img-fluid rounded shadow-sm" style="max-height: 480px;">
+      </div>
+    </div>
+  {% endif %}
+
+  <!-- Field Specialist & Officer Decision Panel -->
+  <div class="row g-4">
+    <!-- Worker Details -->
+    <div class="col-lg-5">
+      <div class="eco-card p-4 h-100">
+        <h5 class="fw-bold text-dark mb-3"><i class="fas fa-hard-hat text-warning me-2"></i> Assigned Field Specialist</h5>
+        {% if assignment %}
+          <div class="small">
+            <div class="mb-2"><strong>Worker Name:</strong> {{ assignment.worker_name }}</div>
+            <div class="mb-2"><strong>Vehicle No:</strong> <code>{{ assignment.vehicle_no or 'Fleet Standard' }}</code></div>
+            <div class="mb-2"><strong>Phone Contact:</strong> {{ assignment.phone or 'N/A' }}</div>
+            <div class="mb-2"><strong>Dispatched Date:</strong> {{ assignment.assigned_date }}</div>
+            <div class="mb-2"><strong>Target Deadline:</strong> {{ assignment.deadline or '24 Hours' }}</div>
+            <div><strong>Supervisor Notes:</strong> {{ assignment.notes or 'None' }}</div>
+          </div>
+        {% else %}
+          <div class="text-muted small">No specialist assigned yet.</div>
+        {% endif %}
+      </div>
+    </div>
+
+    <!-- Officer Final Action Panel -->
+    <div class="col-lg-7">
+      <div class="eco-card p-4 h-100">
+        <h5 class="fw-bold text-dark mb-3"><i class="fas fa-gavel text-primary me-2"></i> Municipal Officer Final Decision</h5>
+        
+        <form method="POST" action="{{ url_for('admin_verification_action', complaint_id=complaint.complaint_id) }}">
+          <div class="mb-3">
+            <label class="form-label small fw-semibold text-muted">Officer Review Notes / Decision Justification</label>
+            <textarea name="officer_remarks" class="form-control" rows="3" placeholder="Enter findings on cleanliness verification, image fidelity, or rework requirements..."></textarea>
+          </div>
+
+          <div class="d-flex flex-wrap gap-2">
+            <!-- Approve Closure -->
+            <button type="submit" name="action" value="approve" class="btn btn-success fw-semibold flex-grow-1">
+              <i class="fas fa-check-double me-1"></i> Approve & Close Complaint
+            </button>
+
+            <!-- Order Rework -->
+            <button type="submit" name="action" value="rework" class="btn btn-warning text-dark fw-semibold flex-grow-1">
+              <i class="fas fa-redo me-1"></i> Order Rework (Re-clean)
+            </button>
+
+            <!-- Dismiss / Reject -->
+            <button type="submit" name="action" value="reject" class="btn btn-outline-danger fw-semibold">
+              <i class="fas fa-times me-1"></i> Dismiss Report
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

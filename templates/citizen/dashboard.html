@@ -1,0 +1,232 @@
+{% extends 'base.html' %}
+
+{% block title %}Citizen Dashboard | Smart Clean Municipality{% endblock %}
+
+{% block content %}
+<div class="dashboard-wrapper">
+  <!-- Sidebar -->
+  <aside class="dashboard-sidebar">
+    <div class="sidebar-header">
+      <div class="small text-uppercase text-muted fw-bold">Citizen Portal</div>
+      <div class="text-white fw-semibold mt-1">{{ current_user.name }}</div>
+    </div>
+    <ul class="sidebar-menu">
+      <li class="sidebar-item">
+        <a href="{{ url_for('citizen_dashboard') }}" class="sidebar-link active">
+          <i class="fas fa-chart-pie"></i>
+          <span>My Overview</span>
+        </a>
+      </li>
+      <li class="sidebar-item">
+        <a href="{{ url_for('report_waste') }}" class="sidebar-link text-warning fw-semibold">
+          <i class="fas fa-camera"></i>
+          <span>Report Waste</span>
+        </a>
+      </li>
+      <li class="sidebar-item">
+        <a href="{{ url_for('citizen_complaints') }}" class="sidebar-link">
+          <i class="fas fa-list-alt"></i>
+          <span>My Complaints</span>
+        </a>
+      </li>
+      <li class="sidebar-item">
+        <a href="{{ url_for('track_complaint') }}" class="sidebar-link">
+          <i class="fas fa-search-location"></i>
+          <span>Track by ID</span>
+        </a>
+      </li>
+      <li class="sidebar-item">
+        <a href="{{ url_for('profile') }}" class="sidebar-link">
+          <i class="fas fa-bell"></i>
+          <span>Notifications</span>
+          {% if unread_notifications > 0 %}
+            <span class="badge bg-danger sidebar-badge">{{ unread_notifications }}</span>
+          {% endif %}
+        </a>
+      </li>
+    </ul>
+  </aside>
+
+  <!-- Main Content -->
+  <main class="dashboard-main">
+    <div class="dashboard-topbar">
+      <div>
+        <h2 class="dashboard-title">Citizen Civic Dashboard</h2>
+        <div class="dashboard-subtitle">Monitor your reported waste complaints and verify municipal cleanup progress.</div>
+      </div>
+      <a href="{{ url_for('report_waste') }}" class="btn btn-eco-primary">
+        <i class="fas fa-plus me-1"></i> Report New Incident
+      </a>
+    </div>
+
+    <!-- Metrics Row -->
+    <div class="row g-4 mb-4">
+      <div class="col-md-4">
+        <div class="metric-card">
+          <div class="metric-icon-box icon-box-blue">
+            <i class="fas fa-clipboard-list"></i>
+          </div>
+          <div>
+            <div class="metric-value">{{ total_complaints }}</div>
+            <div class="metric-label">Total Reported</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="col-md-4">
+        <div class="metric-card">
+          <div class="metric-icon-box icon-box-amber">
+            <i class="fas fa-hourglass-half"></i>
+          </div>
+          <div>
+            <div class="metric-value">{{ pending_complaints }}</div>
+            <div class="metric-label">Active / In Progress</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="col-md-4">
+        <div class="metric-card">
+          <div class="metric-icon-box icon-box-emerald">
+            <i class="fas fa-check-double"></i>
+          </div>
+          <div>
+            <div class="metric-value">{{ closed_complaints }}</div>
+            <div class="metric-label">Verified & Closed</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Charts & Quick Action Row -->
+    <div class="row g-4 mb-4">
+      <div class="col-lg-8">
+        <div class="eco-card h-100">
+          <div class="eco-card-header">
+            <h5 class="fw-bold text-dark m-0">Recent Waste Reports</h5>
+            <a href="{{ url_for('citizen_complaints') }}" class="small text-success text-decoration-none fw-semibold">View All &rarr;</a>
+          </div>
+          <div class="eco-card-body p-0">
+            {% if complaints %}
+              <div class="table-responsive">
+                <table class="eco-table">
+                  <thead>
+                    <tr>
+                      <th>Complaint</th>
+                      <th>Category</th>
+                      <th>Ward & Dept</th>
+                      <th>Status</th>
+                      <th>Action</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {% for c in complaints %}
+                      <tr>
+                        <td>
+                          <div class="d-flex align-items-center gap-3">
+                            {% if c.before_image %}
+                              <img src="/{{ c.before_image }}" alt="waste" class="rounded border" style="width: 48px; height: 48px; object-fit: cover;">
+                            {% else %}
+                              <div class="bg-light rounded border d-flex align-items-center justify-content-center" style="width: 48px; height: 48px;">
+                                <i class="fas fa-image text-muted"></i>
+                              </div>
+                            {% endif %}
+                            <div>
+                              <strong class="d-block text-dark">{{ c.complaint_id }}</strong>
+                              <span class="text-muted small">{{ c.title[:32] }}{% if c.title|length > 32 %}...{% endif %}</span>
+                            </div>
+                          </div>
+                        </td>
+                        <td><span class="badge bg-light text-dark border">{{ c.category }}</span></td>
+                        <td>
+                          <div class="small fw-semibold text-dark">{{ c.ward_name or 'Unassigned' }}</div>
+                          <div class="small text-muted" style="font-size:0.75rem;">{{ c.dept_name or 'General' }}</div>
+                        </td>
+                        <td>
+                          <span class="badge badge-status 
+                            {% if c.status == 'Verified and Closed' %}status-closed
+                            {% elif c.status == 'Cleanup In Progress' %}status-in-progress
+                            {% elif c.status == 'Worker Assigned' %}status-assigned
+                            {% elif c.status == 'AI Verification' %}status-verification
+                            {% else %}status-ai-analysis{% endif %}">
+                            {{ c.status }}
+                          </span>
+                        </td>
+                        <td>
+                          <div class="btn-group btn-group-sm">
+                            <a href="{{ url_for('view_detection_result', complaint_id=c.complaint_id) }}" class="btn btn-outline-secondary" title="View AI Detection">
+                              <i class="fas fa-robot"></i>
+                            </a>
+                            <a href="{{ url_for('track_complaint', complaint_id=c.complaint_id) }}" class="btn btn-outline-primary" title="Track Status">
+                              <i class="fas fa-eye"></i>
+                            </a>
+                          </div>
+                        </td>
+                      </tr>
+                    {% endfor %}
+                  </tbody>
+                </table>
+              </div>
+            {% else %}
+              <div class="p-5 text-center text-muted">
+                <i class="fas fa-clipboard-check display-4 text-secondary mb-3 d-block"></i>
+                <h6>No waste complaints reported yet.</h6>
+                <p class="small">Spot uncollected garbage or overflowing bins? Click below to file a report with photo detection.</p>
+                <a href="{{ url_for('report_waste') }}" class="btn btn-sm btn-eco-primary mt-2">Report First Incident</a>
+              </div>
+            {% endif %}
+          </div>
+        </div>
+      </div>
+
+      <div class="col-lg-4">
+        <div class="eco-card h-100">
+          <div class="eco-card-header">
+            <h5 class="fw-bold text-dark m-0">Category Breakdown</h5>
+          </div>
+          <div class="eco-card-body d-flex flex-column justify-content-center">
+            {% if categories_data %}
+              <canvas id="citizenCategoryChart" style="max-height: 230px;"></canvas>
+            {% else %}
+              <div class="text-center text-muted p-4">
+                <i class="fas fa-chart-pie display-6 mb-2"></i>
+                <p class="small">Category statistics will appear here once you file reports.</p>
+              </div>
+            {% endif %}
+          </div>
+        </div>
+      </div>
+    </div>
+  </main>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+{% if categories_data %}
+<script>
+  const ctx = document.getElementById('citizenCategoryChart').getContext('2d');
+  const catLabels = {{ categories_data.keys()|list|tojson }};
+  const catValues = {{ categories_data.values()|list|tojson }};
+
+  new Chart(ctx, {
+    type: 'doughnut',
+    data: {
+      labels: catLabels,
+      datasets: [{
+        data: catValues,
+        backgroundColor: ['#10b981', '#3b82f6', '#f59e0b', '#ef4444', '#8b5cf6', '#06b6d4'],
+        borderWidth: 2,
+        borderColor: '#ffffff'
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: { position: 'bottom', labels: { boxWidth: 12, font: { size: 11 } } }
+      }
+    }
+  });
+</script>
+{% endif %}
+{% endblock %}
